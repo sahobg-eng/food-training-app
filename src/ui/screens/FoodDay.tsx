@@ -1,19 +1,30 @@
 import { useEffect, useState } from 'preact/hooks';
+import { deleteFoodEntry, entriesForDate, updateFoodEntry } from '../../db/foods';
 import { getDayPlan, setDayType, type DayPlan } from '../../db/macros';
+import type { FoodEntry } from '../../db/types';
 import { addDays, toDateStr } from '../../domain/dates';
+import { formatAmount, formatMacros, scaleMacros, sumMacros, type Macros } from '../../domain/food';
 import { formatDay, formatKg } from '../../domain/format';
 import { navigate } from '../../router';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { errorMessage } from '../errors';
 
-/** The Food tab for one day (today by default). Food logging arrives in step 10. */
+/** The Food tab for one day (today by default): goal, consumed vs target, and what was eaten. */
 export function FoodDay({ date: dateParam }: { date?: string }) {
   const today = toDateStr();
   const date = dateParam && dateParam <= today ? dateParam : today;
   const [plan, setPlan] = useState<DayPlan | null>(null);
+  const [entries, setEntries] = useState<FoodEntry[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const reload = () => getDayPlan(date).then(setPlan);
+  const reload = async () => {
+    const [p, e] = await Promise.all([getDayPlan(date), entriesForDate(date)]);
+    setPlan(p);
+    setEntries(e);
+  };
   useEffect(() => {
     setPlan(null);
+    setEditingId(null);
     void reload();
   }, [date]);
 
@@ -25,6 +36,8 @@ export function FoodDay({ date: dateParam }: { date?: string }) {
     await setDayType(date, plan.dayType === 'workout' ? 'rest' : 'workout');
     await reload();
   }
+
+  const consumed = sumMacros(entries);
 
   return (
     <section>
@@ -63,33 +76,45 @@ export function FoodDay({ date: dateParam }: { date?: string }) {
             </div>
           </div>
 
-          {plan.target ? (
-            <div class="targets">
-              <div class="target kcal">
-                <span class="muted small">Calories</span>
-                <strong>{plan.target.kcal}</strong>
-                <span class="muted small">kcal</span>
-              </div>
-              {(
-                [
-                  ['Protein', plan.target.proteinG],
-                  ['Carbs', plan.target.carbsG],
-                  ['Fat', plan.target.fatG],
-                ] as const
-              ).map(([label, g]) => (
-                <div key={label} class="target">
-                  <span class="muted small">{label}</span>
-                  <strong>{formatKg(g)}</strong>
-                  <span class="muted small">g</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p class="muted">
-              No {plan.dayType} day target yet. <a href="#/food/goals">Set your goals</a>.
+          <MacroSummary consumed={consumed} target={plan.target} />
+          {!plan.target && (
+            <p class="muted small">
+              No {plan.dayType} day target yet. <a href="#/food/goals">Set your goals</a> to see what's left.
             </p>
           )}
-          <p class="muted small">Food logging comes in step 10.</p>
+
+          <a class="primary-link" href={`#/food/add/${date}`}>
+            + Add food
+          </a>
+
+          {entries.length === 0 ? (
+            <p class="muted">Nothing logged {isToday ? 'yet today' : 'on this day'}.</p>
+          ) : (
+            <ul class="list">
+              {entries.map((e) =>
+                e.id === editingId ? (
+                  <EditEntryRow
+                    key={e.id}
+                    entry={e}
+                    onDone={async () => {
+                      setEditingId(null);
+                      await reload();
+                    }}
+                  />
+                ) : (
+                  <li key={e.id}>
+                    <button type="button" class="list-item history-item" onClick={() => setEditingId(e.id)}>
+                      <span class="row">
+                        <strong class="grow ellipsis">{e.name}</strong>
+                        <span class="muted small">{formatAmount(e)}</span>
+                      </span>
+                      <span class="muted small">{formatMacros(e)}</span>
+                    </button>
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
         </>
       )}
 
@@ -98,5 +123,134 @@ export function FoodDay({ date: dateParam }: { date?: string }) {
         <span>›</span>
       </a>
     </section>
+  );
+}
+
+const ROWS: { key: keyof Macros; label: string; unit: string }[] = [
+  { key: 'kcal', label: 'Calories', unit: 'kcal' },
+  { key: 'proteinG', label: 'Protein', unit: 'g' },
+  { key: 'carbsG', label: 'Carbs', unit: 'g' },
+  { key: 'fatG', label: 'Fat', unit: 'g' },
+];
+
+const show = (key: keyof Macros, n: number) => (key === 'kcal' ? String(Math.round(n)) : formatKg(Math.round(n)));
+
+/** Consumed against target with the remaining amount (or how much over). */
+export function MacroSummary({ consumed, target }: { consumed: Macros; target: Macros | null }) {
+  return (
+    <div class="summary">
+      {ROWS.map(({ key, label, unit }) => {
+        // Work in the rounded numbers that are shown, so eaten + left always equals the target.
+        const eaten = Math.round(consumed[key]);
+        const goal = target ? Math.round(target[key]) : null;
+        const left = goal === null ? null : goal - eaten;
+        const pct = goal ? Math.min(100, (eaten / goal) * 100) : 0;
+        const over = left !== null && left < 0;
+        return (
+          <div key={key} class={key === 'kcal' ? 'summary-row main' : 'summary-row'}>
+            <div class="row">
+              <span class="grow">{label}</span>
+              <span class="nums">
+                <strong>{show(key, eaten)}</strong>
+                {goal !== null && <span class="muted"> / {show(key, goal)}</span>} <span class="muted small">{unit}</span>
+              </span>
+            </div>
+            {goal !== null && (
+              <>
+                <div class="bar" role="presentation">
+                  <div class={over ? 'fill over' : 'fill'} style={{ width: `${pct}%` }} />
+                </div>
+                <span class={over ? 'small over-text' : 'muted small'}>
+                  {over ? `${show(key, -left!)} ${unit} over` : `${show(key, left!)} ${unit} left`}
+                </span>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+type Inputs = { amount: string } & Record<keyof Macros, string>;
+
+function EditEntryRow({ entry, onDone }: { entry: FoodEntry; onDone: () => void }) {
+  const [inputs, setInputs] = useState<Inputs>({
+    amount: formatKg(entry.amount),
+    kcal: formatKg(entry.kcal),
+    proteinG: formatKg(entry.proteinG),
+    carbsG: formatKg(entry.carbsG),
+    fatG: formatKg(entry.fatG),
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  /** Changing the amount scales the totals from this entry's own values. */
+  function onAmount(raw: string) {
+    const n = Number(raw.replace(',', '.'));
+    if (Number.isFinite(n) && n > 0) {
+      const m = scaleMacros(entry, n / entry.amount);
+      setInputs({ amount: raw, kcal: formatKg(m.kcal), proteinG: formatKg(m.proteinG), carbsG: formatKg(m.carbsG), fatG: formatKg(m.fatG) });
+    } else setInputs((cur) => ({ ...cur, amount: raw }));
+    setError(null);
+  }
+
+  async function run(fn: () => Promise<unknown>) {
+    try {
+      await fn();
+      onDone();
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  }
+
+  return (
+    <li class="edit-row">
+      <strong>{entry.name}</strong>
+      <form
+        onSubmit={(ev) => {
+          ev.preventDefault();
+          void run(() => updateFoodEntry(entry.id, { amount: inputs.amount, totals: inputs }));
+        }}
+      >
+        <label class="measure-row">
+          <span class="grow">Amount</span>
+          <input type="text" inputMode="decimal" aria-label="Amount" value={inputs.amount} onInput={(e) => onAmount(e.currentTarget.value)} />
+          <span class="muted unit">{entry.amountUnit === 'g' ? 'g' : '×'}</span>
+        </label>
+        {ROWS.map(({ key, label, unit }) => (
+          <label key={key} class="measure-row">
+            <span class="grow">{label}</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              aria-label={label}
+              value={inputs[key]}
+              onInput={(e) => {
+                const v = e.currentTarget.value;
+                setInputs((cur) => ({ ...cur, [key]: v }));
+                setError(null);
+              }}
+            />
+            <span class="muted unit">{unit}</span>
+          </label>
+        ))}
+        {error && <p class="error">{error}</p>}
+        <div class="row">
+          <button type="submit" class="primary">Save</button>
+          <button type="button" onClick={onDone}>Cancel</button>
+          <span class="grow" />
+          <button
+            type="button"
+            class="danger"
+            onClick={() => {
+              if (confirm(`Delete ${entry.name}?`)) void run(() => deleteFoodEntry(entry.id));
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </form>
+      <p class="muted small">Changes apply to this entry only, not to the saved food.</p>
+    </li>
   );
 }

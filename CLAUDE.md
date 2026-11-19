@@ -157,13 +157,14 @@ rewrites past days and history is derived, not copied per day.
 **`foods`** — personal food list
 - `id`, `name`, `basis: 'per100g' | 'perServing'`, `servingLabel: string | null`
   (e.g. "1 bar"), `kcal`, `proteinG`, `carbsG`, `fatG` (per basis unit),
-  `favourite: boolean`, `archived: boolean`, `lastUsedAt: number | null`, `createdAt`
+  `favourite: boolean`, `archived: boolean`, `lastUsedAt: number | null`,
+  `lastAmount?: number | null` (for one-tap re-entry; missing on old rows), `createdAt`
 - Indexes: `name`, `lastUsedAt`. (IndexedDB cannot index booleans, so favourites are a
   filter over the food list, which stays small.)
 
 **`foodEntries`** — what was eaten
 - `id`, `date`, `foodId: string | null`, `name` (snapshot), `amount`,
-  `amountUnit: 'g' | 'serving'`, `kcal`, `proteinG`, `carbsG`, `fatG` (totals for this
+  `amountUnit: 'g' | 'serving'`, `servingLabel?` (snapshot), `kcal`, `proteinG`, `carbsG`, `fatG` (totals for this
   entry, snapshot), `loggedAt`
 - Indexes: `date`, `foodId`.
 - Logging a saved food: user enters amount; totals are computed from the food and stored.
@@ -171,7 +172,12 @@ rewrites past days and history is derived, not copied per day.
   as-is and a `foods` row is created by normalising to the chosen basis (grams → per 100 g;
   servings → per serving).
 - Recent = `foods` by `lastUsedAt` descending; favourites = `favourite === true`.
-- Editing a saved food does not change past entries.
+- Editing a saved food does not change past entries. Editing an entry changes only that entry
+  (the UI scales its totals with the amount).
+- Food names are unique (case-insensitive); manual entry with an existing name is refused.
+- Per 100 g, protein + carbs + fat may not exceed 100 g (102 with label rounding).
+- Entry `loggedAt` is strictly increasing so a day's entries keep their order.
+- The daily view computes "left" from the rounded numbers it shows, so eaten + left = target.
 
 ### App
 

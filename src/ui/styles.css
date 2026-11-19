@@ -243,7 +243,6 @@ button.danger.grow { background: var(--danger); color: #fff; }
 .day-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .day-nav .icon-btn { font-size: 1.6rem; }
 .day-type { margin-top: 12px; }
-.targets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
 .target {
   display: grid; justify-items: center; gap: 2px; padding: 10px 4px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -255,3 +254,36 @@ button.danger.grow { background: var(--danger); color: #fff; }
 .target-form { display: grid; gap: 10px; margin-top: 16px; }
 .target-form h3 { margin: 0; font-size: 1.05rem; }
 .target-form p { margin: 0; }
+
+/* ---------- Food logging ---------- */
+.summary { display: grid; gap: 10px; margin: 12px 0; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.summary-row { display: grid; gap: 4px; }
+.summary-row .nums { font-variant-numeric: tabular-nums; }
+.summary-row.main strong { font-size: 1.25rem; }
+.bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.fill { height: 100%; background: var(--accent); border-radius: 4px; }
+.fill.over { background: #f59e0b; }
+.over-text { color: #f59e0b; }
+.primary-link {
+  display: flex; align-items: center; justify-content: center; min-height: var(--tap); margin: 12px 0;
+  font-weight: 600; text-decoration: none; color: #052e16; background: var(--accent); border-radius: var(--radius);
+}
+.search { margin-bottom: 4px; }
+.food-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.food-row.selected { border-color: var(--accent); }
+.food-row > .row { gap: 4px; padding-right: 8px; }
+.food-main {
+  flex: 1; min-width: 0; display: grid; gap: 2px; justify-items: start; text-align: left;
+  min-height: 56px; padding: 8px 12px; background: none; border: none; font-weight: 500;
+}
+.food-main > * { max-width: 100%; }
+.star { color: var(--muted); background: none; border: none; font-size: 1.3rem; }
+.star.on { color: #fbbf24; }
+.quick-add { min-height: 40px; padding: 0 10px; font-size: 0.9rem; color: var(--accent); border-color: var(--accent); background: var(--bg); white-space: nowrap; }
+.amount-panel { display: grid; gap: 4px; padding: 0 12px 12px; }
+.amount-panel input { width: 110px; text-align: center; font-size: 1.1rem; }
+.amount-panel p { margin: 0; }
+.manual-form { display: grid; gap: 10px; }
+.manual-form h3, .manual-form p { margin: 0; }
+.amount-input { width: 110px; flex: none; text-align: center; }
+.edit-row strong { margin-bottom: 4px; }

@@ -112,6 +112,8 @@ export interface Food {
   favourite: boolean;
   archived: boolean;
   lastUsedAt: number | null;
+  /** Amount used last time it was logged, for one-tap re-entry. Missing on older records. */
+  lastAmount?: number | null;
   createdAt: number;
 }
 
@@ -122,6 +124,7 @@ export interface FoodEntry {
   name: string; // snapshot
   amount: number;
   amountUnit: 'g' | 'serving';
+  servingLabel?: string | null; // snapshot, for 'serving' entries
   kcal: number; // totals for this entry, snapshot
   proteinG: number;
   carbsG: number;

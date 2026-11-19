@@ -16,6 +16,8 @@ import { MeasurementTypes } from './screens/MeasurementTypes';
 import { MeasurementHistory } from './screens/MeasurementHistory';
 import { FoodDay } from './screens/FoodDay';
 import { Goals } from './screens/Goals';
+import { AddFood } from './screens/AddFood';
+import { FoodEditor, Foods } from './screens/Foods';
 
 const TABS: Tab[] = [
   { path: '/train', label: 'Train' },
@@ -40,6 +42,9 @@ const ROUTES: Route[] = [
   { pattern: '/food', render: () => <FoodDay /> },
   { pattern: '/food/day/:date', render: (p) => <FoodDay date={p.date} /> },
   { pattern: '/food/goals', render: () => <Goals /> },
+  { pattern: '/food/add/:date', render: (p) => <AddFood date={p.date} /> },
+  { pattern: '/food/foods', render: () => <Foods /> },
+  { pattern: '/food/foods/:id', render: (p) => <FoodEditor id={p.id} /> },
   { pattern: '/settings', render: () => <Settings /> },
 ];
 
