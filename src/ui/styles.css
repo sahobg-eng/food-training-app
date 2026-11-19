@@ -136,3 +136,18 @@ button.link {
 .menu { display: grid; gap: 8px; }
 .menu-item { justify-content: space-between; }
 .menu-item.disabled { opacity: 0.5; }
+
+/* ---------- Routine editor ---------- */
+.icon-btn { width: 44px; min-width: 44px; padding: 0; font-size: 1.1rem; }
+.order { width: 1.5em; text-align: right; }
+ol.list { padding: 0; }
+button.block { width: 100%; margin-top: 12px; }
+button.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+.actions { margin-top: 32px; }
+.picker {
+  margin-top: 12px; padding: 12px;
+  background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius);
+}
+.picker .list { margin-top: 8px; max-height: 50dvh; overflow-y: auto; }
+.picker .list-item { background: var(--bg); }
+.list-item.create { color: var(--accent); }

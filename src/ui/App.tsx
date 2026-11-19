@@ -5,6 +5,8 @@ import { Placeholder } from './screens/Placeholder';
 import { Settings } from './screens/Settings';
 import { TrainHome } from './screens/TrainHome';
 import { Exercises } from './screens/Exercises';
+import { Routines } from './screens/Routines';
+import { RoutineEditor } from './screens/RoutineEditor';
 
 const TABS: Tab[] = [
   { path: '/train', label: 'Train' },
@@ -18,6 +20,8 @@ type Route = { pattern: string; render: (params: Record<string, string>) => Comp
 const ROUTES: Route[] = [
   { pattern: '/train', render: () => <TrainHome /> },
   { pattern: '/train/exercises', render: () => <Exercises /> },
+  { pattern: '/train/routines', render: () => <Routines /> },
+  { pattern: '/train/routines/:id', render: (p) => <RoutineEditor id={p.id} /> },
   { pattern: '/body', render: () => <Placeholder title="Body" note="Body measurements come in step 8." /> },
   { pattern: '/food', render: () => <Placeholder title="Food" note="Macro goals and food logging come in steps 9–10." /> },
   { pattern: '/settings', render: () => <Settings /> },

@@ -1,25 +1,9 @@
 import { getDB } from './schema';
 import { newId } from './id';
 import type { Exercise } from './types';
+import { byName, cleanName, sameName, ValidationError } from './validation';
 
-/** A user-facing validation problem (shown as-is in the UI). */
-export class ValidationError extends Error {}
-
-export const MAX_NAME_LENGTH = 60;
-
-const byName = (a: Exercise, b: Exercise) =>
-  a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
-
-const sameName = (a: string, b: string) =>
-  a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0;
-
-/** Trim and collapse inner whitespace; throws if empty or too long. */
-export function cleanName(raw: string): string {
-  const name = raw.trim().replace(/\s+/g, ' ');
-  if (!name) throw new ValidationError('Enter a name.');
-  if (name.length > MAX_NAME_LENGTH) throw new ValidationError(`Keep it under ${MAX_NAME_LENGTH} characters.`);
-  return name;
-}
+export { MAX_NAME_LENGTH, ValidationError } from './validation';
 
 function assertUnique(all: Exercise[], name: string, exceptId?: string) {
   const clash = all.find((e) => e.id !== exceptId && sameName(e.name, name));

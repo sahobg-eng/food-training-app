@@ -5,13 +5,10 @@ import {
   MAX_NAME_LENGTH,
   renameExercise,
   setExerciseArchived,
-  ValidationError,
 } from '../../db/exercises';
 import type { Exercise } from '../../db/types';
 import { ScreenHeader } from '../components/ScreenHeader';
-
-const message = (e: unknown) =>
-  e instanceof ValidationError ? e.message : 'Something went wrong. Try again.';
+import { errorMessage as message } from '../errors';
 
 export function Exercises() {
   const [all, setAll] = useState<Exercise[] | null>(null);
