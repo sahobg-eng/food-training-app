@@ -124,6 +124,9 @@ Pure logic goes in `src/domain/` and gets unit tests.
 - `id`, `typeId`, `date`, `value`, `createdAt`
 - Indexes: `[typeId, date]`, `date`.
 - A multi-type entry in the UI writes one row per type with the same `date`.
+- One value per type per day: logging a type again on the same date replaces that value, and
+  moving an entry onto a date that already has one is refused. Values must be > 0 (max 500 kg /
+  300 cm). A type's unit is fixed at creation.
 
 ### Macro goals
 

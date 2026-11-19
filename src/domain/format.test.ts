@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDay, formatDuration, formatKg, formatSet } from './format';
+import { formatChange, formatDay, formatDuration, formatKg, formatSet } from './format';
 
 describe('format', () => {
   it('formats kg without trailing zeros', () => {
@@ -19,5 +19,13 @@ describe('format', () => {
   it('formats sets, with BW for bodyweight', () => {
     expect(formatSet({ weightKg: 100, reps: 5 })).toBe('100 × 5');
     expect(formatSet({ weightKg: 0, reps: 12 })).toBe('BW × 12');
+  });
+});
+
+describe('formatChange', () => {
+  it('signs changes and hides float noise', () => {
+    expect(formatChange(0.4)).toBe('+0.4');
+    expect(formatChange(82.1 - 82.7)).toBe('−0.6');
+    expect(formatChange(1e-9)).toBe('±0');
   });
 });

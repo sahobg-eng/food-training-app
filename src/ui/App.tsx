@@ -12,6 +12,9 @@ import { RoutineEditor } from './screens/RoutineEditor';
 import { StartWorkout } from './screens/StartWorkout';
 import { WorkoutScreen } from './screens/WorkoutScreen';
 import { History } from './screens/History';
+import { Body } from './screens/Body';
+import { MeasurementTypes } from './screens/MeasurementTypes';
+import { MeasurementHistory } from './screens/MeasurementHistory';
 
 const TABS: Tab[] = [
   { path: '/train', label: 'Train' },
@@ -30,7 +33,9 @@ const ROUTES: Route[] = [
   { pattern: '/train/start', render: () => <StartWorkout /> },
   { pattern: '/train/history', render: () => <History /> },
   { pattern: '/train/workout/:id', render: (p) => <WorkoutScreen id={p.id} /> },
-  { pattern: '/body', render: () => <Placeholder title="Body" note="Body measurements come in step 8." /> },
+  { pattern: '/body', render: () => <Body /> },
+  { pattern: '/body/types', render: () => <MeasurementTypes /> },
+  { pattern: '/body/type/:id', render: (p) => <MeasurementHistory id={p.id} /> },
   { pattern: '/food', render: () => <Placeholder title="Food" note="Macro goals and food logging come in steps 9–10." /> },
   { pattern: '/settings', render: () => <Settings /> },
 ];

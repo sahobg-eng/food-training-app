@@ -222,3 +222,18 @@ button.danger.grow { background: var(--danger); color: #fff; }
   color: var(--text); text-decoration: none;
   border: 1px solid #f59e0b; border-radius: var(--radius); background: #451a03;
 }
+
+/* ---------- Body ---------- */
+.measure-form { display: grid; gap: 10px; }
+.measure-form p { margin: 0; }
+.measure-row { display: flex; align-items: center; gap: 8px; }
+.measure-row input { width: 96px; flex: none; text-align: center; font-size: 1.1rem; }
+.unit { width: 1.8em; }
+.measure-form .date-input { width: auto; flex: none; }
+.manage-link { margin-top: 16px; }
+.value { font-variant-numeric: tabular-nums; }
+.value-input { width: 96px; text-align: center; }
+.add-type { display: grid; gap: 8px; }
+.segmented { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.segmented button { border: none; border-radius: 0; background: var(--bg); min-width: 56px; }
+.segmented button.on { background: var(--accent); color: #052e16; }

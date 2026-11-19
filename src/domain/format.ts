@@ -34,3 +34,10 @@ export function formatDay(date: DateStr, currentYear = new Date().getFullYear())
 export function formatSet(s: { weightKg: number; reps: number }): string {
   return `${s.weightKg === 0 ? 'BW' : formatKg(s.weightKg)} × ${s.reps}`;
 }
+
+/** Signed change with the unit's precision: "+0.4", "−0.6", "±0". */
+export function formatChange(delta: number): string {
+  const r = Math.round(delta * 100) / 100;
+  if (r === 0) return '±0';
+  return (r > 0 ? '+' : '−') + String(Math.abs(r));
+}
