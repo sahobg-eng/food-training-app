@@ -56,3 +56,20 @@ h1 { font-size: 1.5rem; margin: 8px 0 16px; }
 }
 
 .nav-item.active { color: var(--accent); }
+
+h2 { font-size: 1.1rem; margin: 24px 0 8px; color: var(--muted); font-weight: 600; }
+
+.error { color: var(--danger); }
+
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
