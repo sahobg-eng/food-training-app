@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { listExercises } from '../../db/exercises';
 import { listRoutines } from '../../db/routines';
 import type { Workout } from '../../db/types';
-import { getActiveWorkout } from '../../db/workouts';
+import { getActiveWorkout, listFinishedWorkouts } from '../../db/workouts';
 import { Timer } from '../components/Timer';
 import { ScreenHeader } from '../components/ScreenHeader';
 
@@ -10,10 +10,12 @@ export function TrainHome() {
   const [count, setCount] = useState<number | null>(null);
   const [routineCount, setRoutineCount] = useState<number | null>(null);
   const [active, setActive] = useState<Workout | null | undefined>(undefined);
+  const [historyCount, setHistoryCount] = useState<number | null>(null);
   useEffect(() => {
     listExercises().then((l) => setCount(l.length), () => setCount(null));
     listRoutines().then((l) => setRoutineCount(l.length), () => setRoutineCount(null));
     getActiveWorkout().then((w) => setActive(w ?? null), () => setActive(null));
+    listFinishedWorkouts().then((l) => setHistoryCount(l.length), () => setHistoryCount(null));
   }, []);
 
   return (
@@ -43,10 +45,10 @@ export function TrainHome() {
           <span>Routines</span>
           <span class="muted">{routineCount ?? ''}</span>
         </a>
-        <div class="menu-item disabled">
+        <a class="menu-item" href="#/train/history">
           <span>History</span>
-          <span class="muted">step 6</span>
-        </div>
+          <span class="muted">{historyCount ?? ''}</span>
+        </a>
       </nav>
     </section>
   );

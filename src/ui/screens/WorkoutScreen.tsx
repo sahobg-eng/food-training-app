@@ -13,8 +13,10 @@ import {
   removeSlot,
   swapSlot,
   updateSet,
+  updateWorkoutTimes,
   type PreviousPerformance,
 } from '../../db/workouts';
+import { addDays, atLocalTime, toDateStr, toTimeStr } from '../../domain/dates';
 import { formatDay, formatDuration, formatKg, formatSet } from '../../domain/format';
 import { navigate } from '../../router';
 import { ExercisePicker } from '../components/ExercisePicker';
@@ -31,6 +33,7 @@ export function WorkoutScreen({ id }: { id: string }) {
   const [previous, setPrevious] = useState<Map<string, PreviousPerformance | null>>(new Map());
   const [picker, setPicker] = useState<Picker>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingTimes, setEditingTimes] = useState(false);
 
   async function reload() {
     const [w, s, ex] = await Promise.all([
@@ -93,7 +96,7 @@ export function WorkoutScreen({ id }: { id: string }) {
     const verb = active ? 'Discard this workout' : 'Delete this workout';
     if (!confirm(`${verb}${what}? This cannot be undone.`)) return;
     await deleteWorkout(w.id);
-    navigate('/train');
+    navigate(active ? '/train' : '/train/history');
   }
 
   async function onRemoveSlot(slot: WorkoutExerciseSlot) {
@@ -122,14 +125,15 @@ export function WorkoutScreen({ id }: { id: string }) {
 
   return (
     <section>
-      <ScreenHeader title={w.routineName ?? 'Workout'} back="/train" />
+      <ScreenHeader title={w.routineName ?? 'Workout'} back={active ? '/train' : '/train/history'} />
       <div class="workout-bar">
         <div class="row">
           {active ? (
             <Timer startedAt={w.startedAt} />
           ) : (
             <span class="muted">
-              {formatDay(w.date)} · {formatDuration(w.durationSec ?? 0)}
+              {formatDay(w.date)} · {toTimeStr(w.startedAt)}–{toTimeStr(w.endedAt!)} ·{' '}
+              {formatDuration(w.durationSec ?? 0)}
             </span>
           )}
           <span class="grow" />
@@ -138,7 +142,24 @@ export function WorkoutScreen({ id }: { id: string }) {
               Finish
             </button>
           )}
+          {!active && !editingTimes && (
+            <button type="button" class="small-btn" onClick={() => setEditingTimes(true)}>
+              Edit time
+            </button>
+          )}
         </div>
+        {editingTimes && (
+          <TimesForm
+            workout={w}
+            onSave={async (start, end) => {
+              if (await act(() => updateWorkoutTimes(w.id, start, end))) setEditingTimes(false);
+            }}
+            onCancel={() => {
+              setEditingTimes(false);
+              setError(null);
+            }}
+          />
+        )}
         {/* In the sticky bar so it is visible wherever the set was entered. */}
         {error && <p class="error">{error}</p>}
       </div>
@@ -353,5 +374,65 @@ function SetEditRow(props: {
         </button>
       </div>
     </li>
+  );
+}
+
+/** Correct a finished workout's date, start and end. An end before the start means past midnight. */
+function TimesForm(props: { workout: Workout; onSave: (start: number, end: number) => void; onCancel: () => void }) {
+  const w = props.workout;
+  const [date, setDate] = useState(w.date);
+  const [start, setStart] = useState(toTimeStr(w.startedAt));
+  const [end, setEnd] = useState(toTimeStr(w.endedAt ?? w.startedAt));
+  const [problem, setProblem] = useState<string | null>(null);
+
+  function compute(): [number, number] | null {
+    try {
+      const s = atLocalTime(date, start);
+      let e = atLocalTime(date, end);
+      if (e <= s) e = atLocalTime(addDays(date, 1), end);
+      return [s, e];
+    } catch {
+      return null;
+    }
+  }
+  const range = compute();
+
+  return (
+    <form
+      class="times-form"
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        if (!range) return setProblem('Enter a date and both times.');
+        props.onSave(range[0], range[1]);
+      }}
+    >
+      <label>
+        <span class="muted small">Date</span>
+        <input type="date" value={date} max={toDateStr()} onInput={(e) => setDate(e.currentTarget.value)} />
+      </label>
+      <div class="row">
+        <label class="grow">
+          <span class="muted small">Start</span>
+          <input type="time" value={start} onInput={(e) => setStart(e.currentTarget.value)} />
+        </label>
+        <label class="grow">
+          <span class="muted small">End</span>
+          <input type="time" value={end} onInput={(e) => setEnd(e.currentTarget.value)} />
+        </label>
+      </div>
+      <p class="muted small">
+        {range
+          ? `Duration ${formatDuration((range[1] - range[0]) / 1000)}${toDateStr(range[1]) !== date ? ' (ends the next day)' : ''}`
+          : (problem ?? 'Enter a date and both times.')}
+      </p>
+      <div class="row">
+        <button type="submit" class="primary" disabled={!range}>
+          Save
+        </button>
+        <button type="button" onClick={props.onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

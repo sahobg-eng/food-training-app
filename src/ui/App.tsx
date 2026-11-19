@@ -11,6 +11,7 @@ import { Routines } from './screens/Routines';
 import { RoutineEditor } from './screens/RoutineEditor';
 import { StartWorkout } from './screens/StartWorkout';
 import { WorkoutScreen } from './screens/WorkoutScreen';
+import { History } from './screens/History';
 
 const TABS: Tab[] = [
   { path: '/train', label: 'Train' },
@@ -27,6 +28,7 @@ const ROUTES: Route[] = [
   { pattern: '/train/routines', render: () => <Routines /> },
   { pattern: '/train/routines/:id', render: (p) => <RoutineEditor id={p.id} /> },
   { pattern: '/train/start', render: () => <StartWorkout /> },
+  { pattern: '/train/history', render: () => <History /> },
   { pattern: '/train/workout/:id', render: (p) => <WorkoutScreen id={p.id} /> },
   { pattern: '/body', render: () => <Placeholder title="Body" note="Body measurements come in step 8." /> },
   { pattern: '/food', render: () => <Placeholder title="Food" note="Macro goals and food logging come in steps 9–10." /> },

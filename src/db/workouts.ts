@@ -255,3 +255,47 @@ export async function getPreviousSets(
     .sort((a, b) => a.order - b.order);
   return { workoutId: best.id, date: best.date, sets };
 }
+
+// ---------- History ----------
+
+export interface WorkoutSummary {
+  workout: Workout;
+  setCount: number;
+}
+
+/** Finished workouts, newest first, with their set counts. */
+export async function listFinishedWorkouts(): Promise<WorkoutSummary[]> {
+  const tx = (await getDB()).transaction(['workouts', 'sets']);
+  const workouts = await tx.objectStore('workouts').index('endedAt').getAll();
+  const setsByWorkout = tx.objectStore('sets').index('workoutId');
+  const out = await Promise.all(
+    workouts.map(async (workout) => ({ workout, setCount: await setsByWorkout.count(workout.id) })),
+  );
+  return out.sort((a, b) => b.workout.startedAt - a.workout.startedAt);
+}
+
+export const MAX_DURATION_SEC = 24 * 3600;
+
+/**
+ * Correct the start and end of a finished workout (e.g. Finish was tapped late).
+ * Moves the workout and its sets to the new start date.
+ */
+export async function updateWorkoutTimes(id: string, startedAt: number, endedAt: number): Promise<Workout> {
+  if (!(endedAt > startedAt)) throw new ValidationError('The end must be after the start.');
+  const durationSec = Math.round((endedAt - startedAt) / 1000);
+  if (durationSec > MAX_DURATION_SEC) throw new ValidationError('A workout can be at most 24 hours long.');
+
+  const tx = (await getDB()).transaction(['workouts', 'sets'], 'readwrite');
+  const w = await tx.objectStore('workouts').get(id);
+  if (!w) throw new ValidationError('That workout no longer exists.');
+  if (w.endedAt === null) throw new ValidationError('Finish the workout before changing its times.');
+  const date = toDateStr(startedAt);
+  const updated: Workout = { ...w, startedAt, endedAt, durationSec, date };
+  await tx.objectStore('workouts').put(updated);
+  if (date !== w.date) {
+    const sets = tx.objectStore('sets');
+    for (const s of await sets.index('workoutId').getAll(id)) await sets.put({ ...s, date });
+  }
+  await tx.done;
+  return updated;
+}

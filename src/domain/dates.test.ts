@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, parseDateStr, toDateStr, weekday } from './dates';
+import { addDays, atLocalTime, parseDateStr, toDateStr, toTimeStr, weekday } from './dates';
 
 // Tests run with TZ=Europe/Berlin (see package.json) so DST is exercised.
 describe('dates', () => {
@@ -25,5 +25,15 @@ describe('dates', () => {
     expect(addDays('2026-10-25', 1)).toBe('2026-10-26');
     expect(addDays('2026-03-29', -1)).toBe('2026-03-28'); // DST starts 29 Mar
     expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
+  });
+});
+
+describe('times', () => {
+  it('round-trips local clock times', () => {
+    const t = atLocalTime('2026-10-25', '09:05'); // DST change day in Berlin
+    expect(toTimeStr(t)).toBe('09:05');
+    expect(new Date(t).getDate()).toBe(25);
+    expect(() => atLocalTime('2026-10-25', '24:00')).toThrow();
+    expect(() => atLocalTime('2026-10-25', '9.05')).toThrow();
   });
 });

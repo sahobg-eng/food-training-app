@@ -28,3 +28,18 @@ export function addDays(s: DateStr, days: number): DateStr {
   d.setDate(d.getDate() + days);
   return toDateStr(d);
 }
+
+/** Local clock time of an instant as 'HH:MM'. */
+export function toTimeStr(ms: number): string {
+  const d = new Date(ms);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Instant for a local date and 'HH:MM' time. */
+export function atLocalTime(date: DateStr, time: string): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) throw new Error(`Invalid time: ${time}`);
+  const d = parseDateStr(date);
+  d.setHours(Number(m[1]), Number(m[2]), 0, 0);
+  return d.getTime();
+}

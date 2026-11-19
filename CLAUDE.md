@@ -108,6 +108,9 @@ Pure logic goes in `src/domain/` and gets unit tests.
 - Each exercise appears at most once per workout (and per routine). Starting from a routine
   skips exercises that are archived.
 - An in-progress workout can be discarded (deletes it and its sets, after a confirm).
+- A finished workout's date, start and end can be corrected from History (e.g. Finish tapped
+  late); this also moves its sets to the new date. Max 24 h; an end before the start means
+  past midnight.
 - Weights accept a comma or a dot as decimal separator (phone keyboards); 0 kg = bodyweight.
   Reps are whole numbers 1-999.
 
