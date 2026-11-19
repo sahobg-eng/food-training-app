@@ -1,8 +1,10 @@
 import type { ComponentChildren } from 'preact';
-import { useRoute } from '../router';
+import { match, useRoute } from '../router';
 import { BottomNav, type Tab } from './components/BottomNav';
 import { Placeholder } from './screens/Placeholder';
 import { Settings } from './screens/Settings';
+import { TrainHome } from './screens/TrainHome';
+import { Exercises } from './screens/Exercises';
 
 const TABS: Tab[] = [
   { path: '/train', label: 'Train' },
@@ -11,24 +13,29 @@ const TABS: Tab[] = [
   { path: '/settings', label: 'Settings' },
 ];
 
+type Route = { pattern: string; render: (params: Record<string, string>) => ComponentChildren };
+
+const ROUTES: Route[] = [
+  { pattern: '/train', render: () => <TrainHome /> },
+  { pattern: '/train/exercises', render: () => <Exercises /> },
+  { pattern: '/body', render: () => <Placeholder title="Body" note="Body measurements come in step 8." /> },
+  { pattern: '/food', render: () => <Placeholder title="Food" note="Macro goals and food logging come in steps 9–10." /> },
+  { pattern: '/settings', render: () => <Settings /> },
+];
+
 export function App() {
   const path = useRoute();
   const tab = TABS.find((t) => path === t.path || path.startsWith(t.path + '/')) ?? TABS[0];
 
-  let screen: ComponentChildren;
-  switch (tab.path) {
-    case '/train':
-      screen = <Placeholder title="Train" note="Workouts, routines and exercises come in steps 3–6." />;
+  let screen: ComponentChildren = null;
+  for (const r of ROUTES) {
+    const params = match(r.pattern, path);
+    if (params) {
+      screen = r.render(params);
       break;
-    case '/body':
-      screen = <Placeholder title="Body" note="Body measurements come in step 8." />;
-      break;
-    case '/food':
-      screen = <Placeholder title="Food" note="Macro goals and food logging come in steps 9–10." />;
-      break;
-    default:
-      screen = <Settings />;
+    }
   }
+  screen ??= ROUTES[0].render({});
 
   return (
     <div class="app">

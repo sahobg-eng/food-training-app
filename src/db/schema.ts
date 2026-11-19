@@ -161,3 +161,12 @@ export function getDB(): Promise<IDBPDatabase<AppDB>> {
   }
   return dbPromise;
 }
+
+/** Tests only: point `getDB()` at a fresh, empty database with the given name. */
+export async function useFreshDBForTests(name: string): Promise<void> {
+  const old = dbPromise;
+  dbPromise = null;
+  if (old) (await old.catch(() => null))?.close();
+  dbPromise = openAppDB(name);
+  await dbPromise;
+}
