@@ -21,6 +21,7 @@ import { formatDay, formatDuration, formatKg, formatSet } from '../../domain/for
 import { navigate } from '../../router';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { confirmDialog } from '../components/ConfirmDialog';
 import { Timer } from '../components/Timer';
 import { errorMessage } from '../errors';
 
@@ -87,14 +88,23 @@ export function WorkoutScreen({ id }: { id: string }) {
   const slots = [...w.exercises].sort((a, b) => a.order - b.order);
 
   async function onFinish() {
-    if (sets.length === 0 && !confirm('No sets logged. Finish anyway?')) return;
+    if (
+      sets.length === 0 &&
+      !(await confirmDialog({ title: 'No sets logged', message: 'Finish this workout anyway?', confirmLabel: 'Finish' }))
+    )
+      return;
     if (await act(() => finishWorkout(w.id))) navigate('/train');
   }
 
   async function onDelete() {
     const what = sets.length ? ` and its ${sets.length} ${sets.length === 1 ? 'set' : 'sets'}` : '';
-    const verb = active ? 'Discard this workout' : 'Delete this workout';
-    if (!confirm(`${verb}${what}? This cannot be undone.`)) return;
+    const ok = await confirmDialog({
+      title: active ? 'Discard this workout?' : 'Delete this workout?',
+      message: `This deletes the workout${what}. It can't be undone.`,
+      confirmLabel: active ? 'Discard' : 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteWorkout(w.id);
     navigate(active ? '/train' : '/train/history');
   }
@@ -102,7 +112,16 @@ export function WorkoutScreen({ id }: { id: string }) {
   async function onRemoveSlot(slot: WorkoutExerciseSlot) {
     const n = sets.filter((s) => s.workoutExerciseId === slot.id).length;
     const name = byId.get(slot.exerciseId)?.name ?? 'this exercise';
-    if (n && !confirm(`Remove ${name} and its ${n} ${n === 1 ? 'set' : 'sets'}?`)) return;
+    if (
+      n &&
+      !(await confirmDialog({
+        title: `Remove ${name}?`,
+        message: `Its ${n} ${n === 1 ? 'set' : 'sets'} in this workout will be deleted.`,
+        confirmLabel: 'Remove',
+        danger: true,
+      }))
+    )
+      return;
     await act(() => removeSlot(w.id, slot.id));
   }
 
@@ -283,7 +302,13 @@ function ExerciseCard(props: {
                   if (await props.onUpdateSet(s.id, input)) setEditingId(null);
                 }}
                 onDelete={async () => {
-                  if (await props.onDeleteSet(s.id)) setEditingId(null);
+                  const ok = await confirmDialog({
+                    title: `Delete set ${i + 1}?`,
+                    message: `${props.name}: ${formatSet(s)}`,
+                    confirmLabel: 'Delete',
+                    danger: true,
+                  });
+                  if (ok && (await props.onDeleteSet(s.id))) setEditingId(null);
                 }}
                 onCancel={() => setEditingId(null)}
               />

@@ -35,7 +35,11 @@ export function History() {
   return (
     <section>
       <ScreenHeader title="History" back="/train" />
-      {items.length === 0 && <p class="muted">No finished workouts yet.</p>}
+      {items.length === 0 && (
+        <p class="muted">
+          No finished workouts yet. <a href="#/train/start">Start one</a>, and it shows up here when you tap Finish.
+        </p>
+      )}
       {groups.map((g) => (
         <div key={g.label}>
           <h2>{g.label}</h2>

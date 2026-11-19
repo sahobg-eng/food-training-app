@@ -40,6 +40,11 @@ export function Settings() {
           )}
         </dl>
       )}
+      <h2>About</h2>
+      <dl class="kv">
+        <dt>Version</dt>
+        <dd>{__APP_VERSION__}</dd>
+      </dl>
     </section>
   );
 }

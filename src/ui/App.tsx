@@ -3,6 +3,8 @@ import { useEffect } from 'preact/hooks';
 import { getActiveWorkout } from '../db/workouts';
 import { match, navigate, useRoute } from '../router';
 import { BottomNav, type Tab } from './components/BottomNav';
+import { ConfirmHost } from './components/ConfirmDialog';
+import { UpdateBanner } from './components/UpdateBanner';
 import { Settings } from './screens/Settings';
 import { TrainHome } from './screens/TrainHome';
 import { Exercises } from './screens/Exercises';
@@ -70,8 +72,10 @@ export function App() {
 
   return (
     <div class="app">
+      <UpdateBanner />
       <main class="screen">{screen}</main>
       <BottomNav tabs={TABS} active={tab.path} />
+      <ConfirmHost />
     </div>
   );
 }

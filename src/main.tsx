@@ -1,10 +1,16 @@
 import { render } from 'preact';
-import { registerSW } from 'virtual:pwa-register';
 import { initStorage } from './db/status';
 import { App } from './ui/App';
+import { ErrorBoundary } from './ui/components/ErrorBoundary';
+import { startServiceWorker } from './ui/update';
 import './ui/styles.css';
 
-registerSW({ immediate: true });
+startServiceWorker();
 void initStorage();
 
-render(<App />, document.getElementById('app')!);
+render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>,
+  document.getElementById('app')!,
+);

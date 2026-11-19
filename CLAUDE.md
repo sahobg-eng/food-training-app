@@ -200,7 +200,8 @@ rewrites past days and history is derived, not copied per day.
 
 ## Build order
 
-Follow this order. Finish and verify each step on the phone before starting the next.
+All 11 steps are done (V1 complete, 19 Nov 2026). Kept for reference; new work should follow
+the same rhythm: build, test, check in the mobile browser, deploy, verify on the phone.
 
 1. **Scaffold** — Vite + Preact + TS, hash router, app shell with bottom nav, PWA manifest +
    service worker, GitHub Pages deploy workflow. Install to home screen and confirm offline load.
@@ -220,6 +221,27 @@ Follow this order. Finish and verify each step on the phone before starting the 
 10. **Food logging** — food list, manual entry, log saved food by amount, recent and
     favourites, edit/delete entries on any day, daily view (consumed / target / remaining).
 11. **Polish** — empty states, confirm dialogs for deletes, final offline and install check.
+
+## UI conventions
+
+- Confirm deletes and other irreversible actions with `confirmDialog()` from
+  `src/ui/components/ConfirmDialog.tsx`, never `window.confirm`. Cancel is focused by default.
+- Show validation problems near where they happen; repos throw `ValidationError` with a message
+  meant for the user, and `errorMessage()` in `src/ui/errors.ts` turns anything else into a
+  generic message.
+- When a state update depends on the previous state (several fields, quick taps), use the
+  functional form `setX((cur) => ...)`.
+
+## Updates and versions
+
+- The service worker uses `registerType: 'prompt'` (`src/ui/update.ts`): a new version waits for
+  the user to tap Update in a banner, so an update never reloads mid-entry. The app also checks
+  for updates hourly. If the hand-over event never comes (first visit after install), Update
+  reloads anyway.
+- Settings → About shows the build date and git commit (`__APP_VERSION__`, set in
+  `vite.config.ts`). `vite.config.ts` is not part of the app's type check (`tsconfig` includes
+  `src` only), so it can use Node APIs without `@types/node`.
+- A render error shows a "Something went wrong" screen with a restart button (`ErrorBoundary`).
 
 ## Working rules
 

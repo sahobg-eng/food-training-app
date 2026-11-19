@@ -27,6 +27,24 @@ export function TrainHome() {
     <section>
       <ScreenHeader title="Train" />
       <BackupNudge lastExport={lastExport} hasData={!!historyCount} />
+      {count === 0 && historyCount === 0 && !active && (
+        <div class="card getting-started">
+          <strong>Getting started</strong>
+          <ol>
+            <li>
+              Add the <a href="#/train/exercises">exercises</a> you train.
+            </li>
+            <li>
+              Optionally group them into <a href="#/train/routines">routines</a>, e.g. "Push day".
+            </li>
+            <li>Start a workout and log your sets.</li>
+          </ol>
+          <p class="muted small">
+            Body measurements and food are on the other tabs. Everything stays on this phone, so back up from
+            Settings now and then.
+          </p>
+        </div>
+      )}
       {active && (
         <a class="resume" href={`#/train/workout/${active.id}`}>
           <span class="grow">

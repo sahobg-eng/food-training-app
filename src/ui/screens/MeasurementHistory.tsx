@@ -4,6 +4,7 @@ import type { MeasurementEntry, MeasurementType } from '../../db/types';
 import { toDateStr } from '../../domain/dates';
 import { formatChange, formatDay, formatKg } from '../../domain/format';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { confirmDialog } from '../components/ConfirmDialog';
 import { errorMessage } from '../errors';
 
 export function MeasurementHistory({ id }: { id: string }) {
@@ -107,8 +108,14 @@ function EditEntryRow(props: { entry: MeasurementEntry; unit: string; onDone: ()
           <button
             type="button"
             class="danger"
-            onClick={() => {
-              if (confirm(`Delete the ${formatDay(props.entry.date)} entry?`)) void run(() => deleteEntry(props.entry.id));
+            onClick={async () => {
+              const ok = await confirmDialog({
+                title: `Delete the ${formatDay(props.entry.date)} entry?`,
+                message: `${formatKg(props.entry.value)} ${props.unit}. This can't be undone.`,
+                confirmLabel: 'Delete',
+                danger: true,
+              });
+              if (ok) void run(() => deleteEntry(props.entry.id));
             }}
           >
             Delete

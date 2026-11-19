@@ -7,6 +7,7 @@ import { formatAmount, formatMacros, scaleMacros, sumMacros, type Macros } from 
 import { formatDay, formatKg } from '../../domain/format';
 import { navigate } from '../../router';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { confirmDialog } from '../components/ConfirmDialog';
 import { errorMessage } from '../errors';
 
 /** The Food tab for one day (today by default): goal, consumed vs target, and what was eaten. */
@@ -242,8 +243,14 @@ function EditEntryRow({ entry, onDone }: { entry: FoodEntry; onDone: () => void 
           <button
             type="button"
             class="danger"
-            onClick={() => {
-              if (confirm(`Delete ${entry.name}?`)) void run(() => deleteFoodEntry(entry.id));
+            onClick={async () => {
+              const ok = await confirmDialog({
+                title: `Delete ${entry.name}?`,
+                message: `${formatAmount(entry)} · ${Math.round(entry.kcal)} kcal. This can't be undone.`,
+                confirmLabel: 'Delete',
+                danger: true,
+              });
+              if (ok) void run(() => deleteFoodEntry(entry.id));
             }}
           >
             Delete

@@ -6,6 +6,7 @@ import { MAX_NAME_LENGTH } from '../../db/validation';
 import { navigate } from '../../router';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { confirmDialog } from '../components/ConfirmDialog';
 import { errorMessage } from '../errors';
 
 export function RoutineEditor({ id }: { id: string }) {
@@ -79,7 +80,13 @@ export function RoutineEditor({ id }: { id: string }) {
   }
 
   async function onDelete() {
-    if (!confirm(`Delete "${routine!.name}"? Past workouts are not affected.`)) return;
+    const ok = await confirmDialog({
+      title: `Delete "${routine!.name}"?`,
+      message: 'Past workouts from this routine are not affected.',
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     await deleteRoutine(id);
     navigate('/train/routines');
   }
