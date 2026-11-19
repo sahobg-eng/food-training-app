@@ -105,6 +105,11 @@ Pure logic goes in `src/domain/` and gets unit tests.
   via `[exerciseId, date]` descending, then its sets in `order`.
 - Swapping an exercise in a session updates `exerciseId` on that slot and its sets.
 - Removing an exercise from a session deletes its sets (confirm in UI if sets exist).
+- Each exercise appears at most once per workout (and per routine). Starting from a routine
+  skips exercises that are archived.
+- An in-progress workout can be discarded (deletes it and its sets, after a confirm).
+- Weights accept a comma or a dot as decimal separator (phone keyboards); 0 kg = bodyweight.
+  Reps are whole numbers 1-999.
 
 ### Body measurements
 

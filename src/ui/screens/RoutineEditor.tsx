@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { addExercise, listExercises } from '../../db/exercises';
 import { deleteRoutine, duplicateRoutine, getRoutine, moveItem, updateRoutine } from '../../db/routines';
 import type { Exercise, Routine } from '../../db/types';
-import { MAX_NAME_LENGTH, sameName } from '../../db/validation';
+import { MAX_NAME_LENGTH } from '../../db/validation';
 import { navigate } from '../../router';
+import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { errorMessage } from '../errors';
 
@@ -172,6 +173,7 @@ export function RoutineEditor({ id }: { id: string }) {
             }
           }}
           onClose={() => setPicking(false)}
+          emptyNote="All your exercises are already in this routine."
         />
       ) : (
         <button type="button" class="block" onClick={() => setPicking(true)}>
@@ -189,70 +191,5 @@ export function RoutineEditor({ id }: { id: string }) {
         </button>
       </div>
     </section>
-  );
-}
-
-function ExercisePicker(props: {
-  exercises: Exercise[];
-  exclude: string[];
-  onPick: (id: string) => void;
-  onCreate: (name: string) => Promise<void>;
-  onClose: () => void;
-}) {
-  const [filter, setFilter] = useState('');
-  const q = filter.trim().replace(/\s+/g, ' ');
-  const available = props.exercises.filter(
-    (e) => !e.archived && !props.exclude.includes(e.id) && e.name.toLowerCase().includes(q.toLowerCase()),
-  );
-  const exists = props.exercises.some((e) => sameName(e.name, q));
-
-  return (
-    <div class="picker">
-      <div class="row">
-        <input
-          class="grow"
-          type="text"
-          placeholder="Search or create exercise"
-          value={filter}
-          maxLength={MAX_NAME_LENGTH}
-          autocapitalize="sentences"
-          onInput={(e) => setFilter(e.currentTarget.value)}
-        />
-        <button type="button" onClick={props.onClose}>
-          Done
-        </button>
-      </div>
-      <ul class="list">
-        {available.map((e) => (
-          <li key={e.id}>
-            <button
-              type="button"
-              class="list-item"
-              onClick={() => {
-                props.onPick(e.id);
-                setFilter('');
-              }}
-            >
-              {e.name}
-            </button>
-          </li>
-        ))}
-        {q && !exists && (
-          <li>
-            <button
-              type="button"
-              class="list-item create"
-              onClick={async () => {
-                await props.onCreate(q);
-                setFilter('');
-              }}
-            >
-              + Create "{q}"
-            </button>
-          </li>
-        )}
-      </ul>
-      {available.length === 0 && !q && <p class="muted small">All your exercises are already in this routine.</p>}
-    </div>
   );
 }
