@@ -65,22 +65,26 @@ export function Body() {
         {types?.map((t) => {
           const existing = onDate.get(t.id);
           const last = latest.get(t.id)?.latest;
+          // Each type is its own row: the name in bold, and the last value as text (not as a
+          // grey placeholder, which looked like an already-entered value).
+          const note = existing
+            ? `Logged: ${formatKg(existing.value)} ${t.unit} · saving replaces it`
+            : last
+              ? `Last: ${formatKg(last.value)} ${t.unit} · ${formatDay(last.date)}`
+              : 'No entries yet';
           return (
-            <label key={t.id} class="measure-row">
+            <label key={t.id} class="measure-row entry">
               <span class="grow">
-                {t.name}
-                {existing && (
-                  <span class="muted small">
-                    <br />
-                    {formatKg(existing.value)} {t.unit} logged · saving replaces it
-                  </span>
-                )}
+                <strong>{t.name}</strong>
+                <span class={existing ? 'small warn-note' : 'muted small'}>
+                  <br />
+                  {note}
+                </span>
               </span>
               <input
                 type="text"
                 inputMode="decimal"
                 aria-label={`${t.name} in ${t.unit}`}
-                placeholder={last ? formatKg(last.value) : ''}
                 value={values[t.id] ?? ''}
                 onInput={(e) => {
                   const v = e.currentTarget.value;

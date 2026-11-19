@@ -313,3 +313,9 @@ button.danger-solid { background: var(--danger); border-color: var(--danger); co
 .getting-started { display: grid; gap: 8px; }
 .getting-started ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
 .getting-started p { margin: 0; }
+
+/* Body form: one clearly separated row per measurement type */
+.measure-row.entry { padding: 10px 0; border-top: 1px solid var(--border); }
+.measure-row.entry strong { font-size: 1.05rem; }
+.measure-row.entry input { border-color: var(--muted); }
+.warn-note { color: #f59e0b; }
