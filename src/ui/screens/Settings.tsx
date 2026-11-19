@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { getStorageStatus, type StorageStatus } from '../../db/status';
+import { BackupPanel } from '../components/BackupPanel';
 
 const PERSIST_LABEL = {
   persistent: 'Persistent — the browser will not clear it on its own',
@@ -18,6 +19,8 @@ export function Settings() {
   return (
     <section>
       <h1>Settings</h1>
+      <h2>Backup</h2>
+      <BackupPanel />
       <h2>Storage</h2>
       {error && <p class="error">Database error: {error}</p>}
       {!status && !error && <p class="muted">Checking…</p>}
@@ -37,7 +40,6 @@ export function Settings() {
           )}
         </dl>
       )}
-      <p class="muted">Export and import come in step 7.</p>
     </section>
   );
 }

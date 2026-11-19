@@ -177,6 +177,10 @@ rewrites past days and history is derived, not copied per day.
   Delivered via the Web Share API with a file when available, otherwise a download link.
 - Import: validate `app` and `schemaVersion` (run migrations for older versions), show counts,
   confirm, then replace all stores in a single transaction. Never merge.
+- A failed restore leaves the existing data untouched (one transaction). Old backups missing
+  stores added later are filled with empty lists; add a backup migration in `backup.ts` with
+  every schema change that alters record shapes.
+- Train shows a reminder when there is training data and no backup in the last 7 days.
 - Request `navigator.storage.persist()` on first run to reduce the risk of the browser
   evicting data. Show the date of the last export in Settings.
 
