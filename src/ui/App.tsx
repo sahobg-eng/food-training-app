@@ -3,7 +3,6 @@ import { useEffect } from 'preact/hooks';
 import { getActiveWorkout } from '../db/workouts';
 import { match, navigate, useRoute } from '../router';
 import { BottomNav, type Tab } from './components/BottomNav';
-import { Placeholder } from './screens/Placeholder';
 import { Settings } from './screens/Settings';
 import { TrainHome } from './screens/TrainHome';
 import { Exercises } from './screens/Exercises';
@@ -15,6 +14,8 @@ import { History } from './screens/History';
 import { Body } from './screens/Body';
 import { MeasurementTypes } from './screens/MeasurementTypes';
 import { MeasurementHistory } from './screens/MeasurementHistory';
+import { FoodDay } from './screens/FoodDay';
+import { Goals } from './screens/Goals';
 
 const TABS: Tab[] = [
   { path: '/train', label: 'Train' },
@@ -36,7 +37,9 @@ const ROUTES: Route[] = [
   { pattern: '/body', render: () => <Body /> },
   { pattern: '/body/types', render: () => <MeasurementTypes /> },
   { pattern: '/body/type/:id', render: (p) => <MeasurementHistory id={p.id} /> },
-  { pattern: '/food', render: () => <Placeholder title="Food" note="Macro goals and food logging come in steps 9–10." /> },
+  { pattern: '/food', render: () => <FoodDay /> },
+  { pattern: '/food/day/:date', render: (p) => <FoodDay date={p.date} /> },
+  { pattern: '/food/goals', render: () => <Goals /> },
   { pattern: '/settings', render: () => <Settings /> },
 ];
 

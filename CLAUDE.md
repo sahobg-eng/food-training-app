@@ -146,6 +146,11 @@ rewrites past days and history is derived, not copied per day.
 **`dayOverrides`**
 - key `date`, `dayType: 'workout' | 'rest'`
 - Day type for a date = override if present, else the schedule version in force that day.
+- Lookups live in `src/domain/macros.ts` (pure, unit-tested). Days before the first version use
+  the first version, so days logged after the fact still get a target; with no schedule every
+  day is a rest day; with no target for that day type the target is null.
+- Setting a day back to its scheduled type deletes the override. Saving values equal to the
+  version in force writes nothing.
 
 ### Food
 

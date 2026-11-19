@@ -237,3 +237,21 @@ button.danger.grow { background: var(--danger); color: #fff; }
 .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .segmented button { border: none; border-radius: 0; background: var(--bg); min-width: 56px; }
 .segmented button.on { background: var(--accent); color: #052e16; }
+
+/* ---------- Food & goals ---------- */
+.center { text-align: center; }
+.day-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.day-nav .icon-btn { font-size: 1.6rem; }
+.day-type { margin-top: 12px; }
+.targets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+.target {
+  display: grid; justify-items: center; gap: 2px; padding: 10px 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.target strong { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.weekdays button { padding: 0; min-width: 0; background: var(--bg); }
+.weekdays button.on { background: var(--accent); border-color: var(--accent); color: #052e16; }
+.target-form { display: grid; gap: 10px; margin-top: 16px; }
+.target-form h3 { margin: 0; font-size: 1.05rem; }
+.target-form p { margin: 0; }
