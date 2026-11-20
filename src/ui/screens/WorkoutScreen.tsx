@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { addExercise, listExercises } from '../../db/exercises';
+import { addExercise, listExercises, type ExerciseDetails } from '../../db/exercises';
+import { MuscleLine } from '../components/CatalogSuggestions';
 import type { Exercise, Workout, WorkoutExerciseSlot, WorkoutSet } from '../../db/types';
 import {
   addSet,
@@ -152,9 +153,9 @@ export function WorkoutScreen({ id }: { id: string }) {
       });
   }
 
-  async function onCreate(name: string) {
+  async function onCreate(name: string, details?: ExerciseDetails) {
     await act(async () => {
-      const ex = await addExercise(name);
+      const ex = await addExercise(name, details);
       if (picker?.mode === 'swap') {
         await swapSlot(w.id, picker.slot.id, ex.id);
         setPicker(null);
@@ -217,6 +218,7 @@ export function WorkoutScreen({ id }: { id: string }) {
           // A swap gives a new key, so the offered rows restart from the new exercise's last time.
           key={`${slot.id}:${slot.exerciseId}`}
           name={byId.get(slot.exerciseId)?.name ?? 'Unknown exercise'}
+          exercise={byId.get(slot.exerciseId)}
           sets={sets.filter((s) => s.workoutExerciseId === slot.id)}
           previous={previous.get(slot.exerciseId)}
           active={active}
@@ -268,6 +270,7 @@ type SetInput = { reps: string; weightKg: string };
 
 function ExerciseCard(props: {
   name: string;
+  exercise?: Exercise;
   sets: WorkoutSet[];
   previous: PreviousPerformance | null | undefined;
   /** Live workout: rows from last time are offered to record. Past workouts show only what was done. */
@@ -369,6 +372,8 @@ function ExerciseCard(props: {
       </header>
 
       <p class="muted small prev">
+        <MuscleLine primary={props.exercise?.primaryMuscles} secondary={props.exercise?.secondaryMuscles} />
+        {props.exercise?.primaryMuscles?.length ? <br /> : null}
         {previous === undefined ? ' ' : previous === null ? 'First time' : `Last time · ${formatDay(previous.date)}`}
       </p>
 

@@ -6,6 +6,7 @@ import {
   listExercises,
   renameExercise,
   setExerciseArchived,
+  setExerciseDetails,
   ValidationError,
 } from './exercises';
 
@@ -48,5 +49,19 @@ describe('exercises', () => {
   it('errors on a missing id', async () => {
     await expect(renameExercise('nope', 'X')).rejects.toThrow('no longer exists');
     await expect(setExerciseArchived('nope', true)).rejects.toThrow('no longer exists');
+  });
+
+  it('stores cleaned muscles and equipment, and lets them be changed', async () => {
+    const a = await addExercise('Bench', {
+      primaryMuscles: ['chest', 'chest'],
+      secondaryMuscles: ['chest', 'triceps', 'wings' as never],
+      equipment: ' barbell ',
+      catalogId: 'Barbell_Bench',
+    });
+    expect(a).toMatchObject({ primaryMuscles: ['chest'], secondaryMuscles: ['triceps'], equipment: 'barbell', catalogId: 'Barbell_Bench' });
+    const b = await addExercise('Plank');
+    expect(b).toMatchObject({ primaryMuscles: [], secondaryMuscles: [], equipment: null });
+    const u = await setExerciseDetails(b.id, { primaryMuscles: ['abdominals'] });
+    expect(u).toMatchObject({ name: 'Plank', primaryMuscles: ['abdominals'], secondaryMuscles: [] });
   });
 });

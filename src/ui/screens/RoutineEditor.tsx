@@ -170,9 +170,9 @@ export function RoutineEditor({ id }: { id: string }) {
           exercises={exercises}
           exclude={ids}
           onPick={(exId) => changeIds((ids) => (ids.includes(exId) ? ids : [...ids, exId]))}
-          onCreate={async (raw) => {
+          onCreate={async (raw, details) => {
             try {
-              const ex = await addExercise(raw);
+              const ex = await addExercise(raw, details);
               await reloadExercises();
               await changeIds((ids) => [...ids, ex.id]);
             } catch (e) {

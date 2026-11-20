@@ -15,6 +15,7 @@ V1 is a personal, single-user Android web app that logs strength training, body 
 A workout is started either from a saved routine or as an empty session, and every set is stored permanently for later analysis.
 
 - **Exercise library:** a user-managed list of exercises. Add, rename and archive. Archived exercises keep their history.
+- **Built-in exercise list with muscles:** when adding an exercise, matching exercises from a bundled public-domain list (free-exercise-db, 876 exercises) are suggested with their primary and secondary muscle groups. Any exercise's muscles can also be set by hand. Works offline, no cost.
 - **Saved routines:** a named, ordered list of exercises (e.g. "Push day"). Create, edit, reorder, duplicate and delete.
 - **Start from routine:** pre-fills the exercises. During the session, exercises can be added, removed or swapped without changing the saved routine.
 - **Free workout:** starts empty and exercises are added as you go.
@@ -80,6 +81,10 @@ Phone-only storage works offline in the gym and needs no account. The accepted r
 ## Decisions and assumptions
 
 All scope decisions are closed and all assumptions are confirmed. V1 is ready to build.
+
+**Decisions taken on 20 Nov 2026**
+
+- **Exercise muscles:** added to V1, using the bundled free-exercise-db list (public domain).
 
 **Decisions taken on 19 Nov 2026**
 

@@ -5,8 +5,12 @@ import {
   MAX_NAME_LENGTH,
   renameExercise,
   setExerciseArchived,
+  setExerciseDetails,
+  type ExerciseDetails,
 } from '../../db/exercises';
-import type { Exercise } from '../../db/types';
+import { MUSCLES, type Exercise, type Muscle } from '../../db/types';
+import type { CatalogEntry } from '../../domain/catalog';
+import { CatalogSuggestions, detailsFrom, MuscleLine } from '../components/CatalogSuggestions';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { errorMessage as message } from '../errors';
 
@@ -40,6 +44,18 @@ export function Exercises() {
     }
   }
 
+  /** Add a library exercise with its muscles, under the library's name. */
+  async function addFromCatalog(entry: CatalogEntry) {
+    setNewName('');
+    try {
+      await addExercise(entry.n, detailsFrom(entry));
+      setAddError(null);
+      await reload();
+    } catch (e) {
+      setAddError(message(e));
+    }
+  }
+
   async function onUnarchive(id: string) {
     await setExerciseArchived(id, false);
     await reload();
@@ -68,6 +84,7 @@ export function Exercises() {
         </button>
       </form>
       {addError && <p class="error">{addError}</p>}
+      <CatalogSuggestions query={newName} existingNames={(all ?? []).map((e) => e.name)} onPick={addFromCatalog} />
 
       {all === null ? (
         <p class="muted">Loading…</p>
@@ -95,7 +112,10 @@ export function Exercises() {
                     setAddError(null);
                   }}
                 >
-                  {ex.name}
+                  <span class="grow">
+                    {ex.name}
+                    <MuscleLine primary={ex.primaryMuscles} secondary={ex.secondaryMuscles} />
+                  </span>
                 </button>
               </li>
             ),
@@ -126,8 +146,33 @@ export function Exercises() {
   );
 }
 
+type Role = 'primary' | 'secondary' | null;
+
 function EditRow({ exercise, onDone }: { exercise: Exercise; onDone: () => void }) {
   const [name, setName] = useState(exercise.name);
+  const [details, setDetails] = useState<ExerciseDetails>({
+    primaryMuscles: exercise.primaryMuscles ?? [],
+    secondaryMuscles: exercise.secondaryMuscles ?? [],
+    equipment: exercise.equipment ?? null,
+    catalogId: exercise.catalogId ?? null,
+  });
+  const role = (m: Muscle): Role =>
+    details.primaryMuscles?.includes(m) ? 'primary' : details.secondaryMuscles?.includes(m) ? 'secondary' : null;
+  /** Tapping a muscle cycles: not worked → primary → secondary → not worked. */
+  function cycle(m: Muscle) {
+    const next: Role = { primary: 'secondary', secondary: null, none: 'primary' }[role(m) ?? 'none'] as Role;
+    setDetails((d) => ({
+      ...d,
+      catalogId: null, // edited by hand: no longer exactly the library entry
+      primaryMuscles: next === 'primary' ? [...(d.primaryMuscles ?? []), m] : (d.primaryMuscles ?? []).filter((x) => x !== m),
+      secondaryMuscles:
+        next === 'secondary' ? [...(d.secondaryMuscles ?? []), m] : (d.secondaryMuscles ?? []).filter((x) => x !== m),
+    }));
+  }
+  const detailsChanged =
+    (details.primaryMuscles ?? []).join() !== (exercise.primaryMuscles ?? []).join() ||
+    (details.secondaryMuscles ?? []).join() !== (exercise.secondaryMuscles ?? []).join() ||
+    (details.equipment ?? null) !== (exercise.equipment ?? null);
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -140,6 +185,7 @@ function EditRow({ exercise, onDone }: { exercise: Exercise; onDone: () => void 
     ev.preventDefault();
     try {
       if (name.trim() !== exercise.name) await renameExercise(exercise.id, name);
+      if (detailsChanged) await setExerciseDetails(exercise.id, details);
       onDone();
     } catch (e) {
       setError(message(e));
@@ -170,6 +216,32 @@ function EditRow({ exercise, onDone }: { exercise: Exercise; onDone: () => void 
           }}
         />
         {error && <p class="error">{error}</p>}
+
+        <p class="muscle-title">
+          Muscles <span class="muted small">· tap: primary, again: secondary, again: off</span>
+        </p>
+        <div class="muscle-chips">
+          {MUSCLES.map((m) => (
+            <button
+              key={m}
+              type="button"
+              class={`chip ${role(m) ?? ''}`}
+              aria-pressed={role(m) !== null}
+              aria-label={`${m}: ${role(m) ?? 'not worked'}`}
+              onClick={() => cycle(m)}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+        <CatalogSuggestions
+          query={name}
+          existingNames={[]}
+          limit={3}
+          title="Or use the muscles of a library exercise:"
+          onPick={(entry) => setDetails(detailsFrom(entry))}
+        />
+
         <div class="row">
           <button type="submit" class="primary">Save</button>
           <button type="button" onClick={onDone}>Cancel</button>

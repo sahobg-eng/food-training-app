@@ -7,11 +7,22 @@ export type DayType = 'workout' | 'rest';
 
 // ---------- Training ----------
 
+export const MUSCLES = [
+  'abdominals', 'abductors', 'adductors', 'biceps', 'calves', 'chest', 'forearms', 'glutes', 'hamstrings',
+  'lats', 'lower back', 'middle back', 'neck', 'quadriceps', 'shoulders', 'traps', 'triceps',
+] as const;
+export type Muscle = (typeof MUSCLES)[number];
+
 export interface Exercise {
   id: string;
   name: string;
   archived: boolean;
   createdAt: number;
+  // Optional, from the built-in exercise library or tagged by hand. Missing on older records.
+  primaryMuscles?: Muscle[];
+  secondaryMuscles?: Muscle[];
+  equipment?: string | null;
+  catalogId?: string | null;
 }
 
 export interface Routine {

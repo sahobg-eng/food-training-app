@@ -1,16 +1,19 @@
 import { useState } from 'preact/hooks';
+import type { ExerciseDetails } from '../../db/exercises';
 import type { Exercise } from '../../db/types';
 import { MAX_NAME_LENGTH, sameName } from '../../db/validation';
+import { CatalogSuggestions, detailsFrom, MuscleLine } from './CatalogSuggestions';
 
 /**
  * Search the active exercises (minus `exclude`) and pick one, or create a new one
- * from the search text. Used by routines and workouts.
+ * from the search text or from the built-in library (with its muscles). Used by routines
+ * and workouts.
  */
 export function ExercisePicker(props: {
   exercises: Exercise[];
   exclude: string[];
   onPick: (id: string) => void;
-  onCreate: (name: string) => Promise<void>;
+  onCreate: (name: string, details?: ExerciseDetails) => Promise<void>;
   onClose: () => void;
   closeLabel?: string;
   title?: string;
@@ -51,7 +54,10 @@ export function ExercisePicker(props: {
                 setFilter('');
               }}
             >
-              {e.name}
+              <span class="grow">
+                {e.name}
+                <MuscleLine primary={e.primaryMuscles} secondary={e.secondaryMuscles} />
+              </span>
             </button>
           </li>
         ))}
@@ -70,6 +76,14 @@ export function ExercisePicker(props: {
           </li>
         )}
       </ul>
+      <CatalogSuggestions
+        query={q}
+        existingNames={props.exercises.map((e) => e.name)}
+        onPick={async (entry) => {
+          await props.onCreate(entry.n, detailsFrom(entry));
+          setFilter('');
+        }}
+      />
       {available.length === 0 && !q && <p class="muted small">{props.emptyNote ?? 'No more exercises to add.'}</p>}
     </div>
   );

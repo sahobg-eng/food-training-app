@@ -80,8 +80,17 @@ Pure logic goes in `src/domain/` and gets unit tests.
 ### Training
 
 **`exercises`** — the exercise library
-- `id`, `name`, `archived: boolean`, `createdAt`
+- `id`, `name`, `archived: boolean`, `createdAt`, and optional `primaryMuscles: Muscle[]`,
+  `secondaryMuscles: Muscle[]`, `equipment: string | null`, `catalogId: string | null`
+  (missing on rows created before 20 Nov 2026; treat as none). `Muscle` is one of the 17 names
+  in `MUSCLES` (`src/db/types.ts`). No DB version bump was needed: no new store or index.
 - Index: `name`. Archived exercises are hidden from pickers but keep all history.
+- **Built-in exercise list:** `src/data/exercise-catalog.json` (876 entries: name, primary and
+  secondary muscles, equipment), built by `node scripts/build-catalog.mjs <exercises.json>` from
+  free-exercise-db (github.com/yuhonas/free-exercise-db, public domain). It is loaded on first use
+  as its own file and precached for offline. Search and ranking live in `src/domain/catalog.ts`
+  (everyday lifts first, specialty variants last, nicknames like OHP/RDL). Picking an entry
+  creates a normal exercise with its name and muscles; nothing links back to the catalog.
 
 **`routines`** — saved templates
 - `id`, `name`, `exerciseIds: string[]` (ordered), `createdAt`, `updatedAt`

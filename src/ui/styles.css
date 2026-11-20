@@ -433,3 +433,22 @@ button.set-line { width: 100%; text-align: left; font: inherit; color: var(--tex
 .check.on { color: #052e16; background: var(--accent); border-color: var(--accent); }
 .set-table .set-edit { grid-column: 1 / -1; }
 .add-set { margin: 10px 4px 0; font-weight: 600; color: var(--accent); text-decoration: none; }
+
+/* ---------- Exercise library & muscles ---------- */
+.muscles { display: block; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.list-item .muscles, .catalog-item .muted { display: block; }
+.list-item > .grow { display: block; padding: 8px 0; }
+.catalog { margin-top: 12px; }
+.catalog-title { margin: 0 0 6px; font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+.catalog-item { border-style: dashed; }
+.catalog-name { display: block; color: var(--accent); font-weight: 600; }
+.catalog .list { margin-top: 0; }
+.muscle-title { margin: 6px 0 0; font-weight: 600; }
+.muscle-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  min-height: 36px; padding: 0 12px; border-radius: 18px; font-size: 0.85rem; font-weight: 600;
+  background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+}
+.chip.primary { background: var(--accent); border-color: var(--accent); color: #052e16; }
+.chip.secondary { background: color-mix(in srgb, var(--accent) 18%, var(--bg)); border-color: var(--accent); color: var(--text); }
+.edit-row .catalog { margin-top: 4px; }
