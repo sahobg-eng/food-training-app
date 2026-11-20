@@ -1,13 +1,15 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { listExercises } from '../../db/exercises';
 import { listRoutines } from '../../db/routines';
 import type { Workout } from '../../db/types';
 import { getActiveWorkout, listFinishedWorkouts } from '../../db/workouts';
-import { Timer } from '../components/Timer';
 import { getLastExportAt } from '../../db/backup';
+import { CalendarIcon, ChecklistIcon, DumbbellIcon, PlayIcon } from '../components/Icons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { Timer } from '../components/Timer';
 
 const BACKUP_NUDGE_DAYS = 7;
-import { ScreenHeader } from '../components/ScreenHeader';
 
 export function TrainHome() {
   const [count, setCount] = useState<number | null>(null);
@@ -45,34 +47,31 @@ export function TrainHome() {
           </p>
         </div>
       )}
-      {active && (
-        <a class="resume" href={`#/train/workout/${active.id}`}>
-          <span class="grow">
-            <strong>Workout in progress</strong>
-            <span class="muted small"> · {active.routineName ?? 'Empty workout'}</span>
-          </span>
-          <Timer startedAt={active.startedAt} />
-        </a>
-      )}
-      <nav class="menu">
-        {active === null && (
-          <a class="menu-item primary-item" href="#/train/start">
-            <span>Start workout</span>
-            <span>›</span>
+      <div class="start-wrap">
+        {active ? (
+          <a class="start-btn resume-btn" href={`#/train/workout/${active.id}`}>
+            <span class="start-label">Resume</span>
+            <Timer startedAt={active.startedAt} />
+            <span class="start-sub">{active.routineName ?? 'Empty workout'}</span>
+          </a>
+        ) : (
+          <a class="start-btn" href="#/train/start" aria-disabled={active === undefined}>
+            <PlayIcon />
+            <span class="start-label">Start workout</span>
           </a>
         )}
-        <a class="menu-item" href="#/train/exercises">
-          <span>Exercises</span>
-          <span class="muted">{count ?? ''}</span>
-        </a>
-        <a class="menu-item" href="#/train/routines">
-          <span>Routines</span>
-          <span class="muted">{routineCount ?? ''}</span>
-        </a>
-        <a class="menu-item" href="#/train/history">
-          <span>History</span>
-          <span class="muted">{historyCount ?? ''}</span>
-        </a>
+      </div>
+
+      <nav class="tiles" aria-label="Training">
+        <Tile href="#/train/routines" label="Routines" count={routineCount} tone="routines">
+          <ChecklistIcon />
+        </Tile>
+        <Tile href="#/train/exercises" label="Exercises" count={count} tone="exercises">
+          <DumbbellIcon />
+        </Tile>
+        <Tile href="#/train/history" label="History" count={historyCount} tone="history">
+          <CalendarIcon />
+        </Tile>
       </nav>
     </section>
   );
@@ -87,6 +86,22 @@ function BackupNudge({ lastExport, hasData }: { lastExport: number | null | unde
     <a class="nudge" href="#/settings">
       <span class="grow">{days === null ? 'No backup yet.' : `Last backup ${days} days ago.`} Your data is only on this phone.</span>
       <strong>Back up ›</strong>
+    </a>
+  );
+}
+
+function Tile(props: {
+  href: string;
+  label: string;
+  count: number | null;
+  tone: 'routines' | 'exercises' | 'history';
+  children: ComponentChildren;
+}) {
+  return (
+    <a class={`tile tile-${props.tone}`} href={props.href}>
+      {props.count !== null && <span class="tile-count">{props.count}</span>}
+      <span class="tile-icon">{props.children}</span>
+      <span class="tile-label">{props.label}</span>
     </a>
   );
 }

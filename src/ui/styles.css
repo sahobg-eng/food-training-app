@@ -319,3 +319,41 @@ button.danger-solid { background: var(--danger); border-color: var(--danger); co
 .measure-row.entry strong { font-size: 1.05rem; }
 .measure-row.entry input { border-color: var(--muted); }
 .warn-note { color: #f59e0b; }
+
+/* ---------- Train home: round start button + icon tiles ---------- */
+.start-wrap { display: flex; justify-content: center; margin: 20px 0 32px; }
+.start-btn {
+  width: 184px; height: 184px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  color: #052e16; text-decoration: none; text-align: center;
+  background: radial-gradient(circle at 35% 30%, #4ade80, #16a34a 70%);
+  box-shadow: 0 10px 30px rgb(34 197 94 / 0.35), inset 0 -6px 14px rgb(0 0 0 / 0.15);
+  transition: transform 0.1s;
+}
+.start-btn:active { transform: scale(0.96); }
+.start-btn[aria-disabled='true'] { opacity: 0.6; pointer-events: none; }
+.start-label { font-size: 1.2rem; font-weight: 800; }
+.start-sub { font-size: 0.85rem; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resume-btn .timer { font-size: 1.6rem; color: #052e16; }
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.tile {
+  --tone: var(--accent);
+  position: relative; aspect-ratio: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  color: var(--text); text-decoration: none;
+  background: color-mix(in srgb, var(--tone) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, var(--border));
+  border-radius: 18px;
+  transition: transform 0.1s;
+}
+.tile:active { transform: scale(0.96); }
+.tile-icon { color: var(--tone); display: flex; }
+.tile-label { font-weight: 700; font-size: 0.95rem; }
+.tile-count {
+  position: absolute; top: 8px; right: 10px;
+  font-size: 0.8rem; font-weight: 700; color: var(--muted);
+}
+.tile-routines { --tone: #38bdf8; }
+.tile-exercises { --tone: #22c55e; }
+.tile-history { --tone: #c084fc; }
