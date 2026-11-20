@@ -18,6 +18,7 @@ import {
 } from '../../db/workouts';
 import { addDays, atLocalTime, toDateStr, toTimeStr } from '../../domain/dates';
 import { formatDay, formatDuration, formatKg, formatSet } from '../../domain/format';
+import { extraRow, initialPendingRows, type PendingRow } from '../../domain/sets';
 import { navigate, previousPath } from '../../router';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -35,6 +36,9 @@ export function WorkoutScreen({ id }: { id: string }) {
   const [picker, setPicker] = useState<Picker>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingTimes, setEditingTimes] = useState(false);
+  // Only one exercise is expanded at a time. Picked automatically once everything has loaded.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const autoPicked = useRef(false);
 
   async function reload() {
     const [w, s, ex] = await Promise.all([
@@ -60,6 +64,18 @@ export function WorkoutScreen({ id }: { id: string }) {
   }, [id]);
 
   const byId = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises]);
+
+  useEffect(() => {
+    if (autoPicked.current || !workout || previous.size < new Set(workout.exercises.map((s) => s.exerciseId)).size) return;
+    autoPicked.current = true;
+    const ordered = [...workout.exercises].sort((a, b) => a.order - b.order);
+    // The first exercise with sets still to do (resuming), else the first one.
+    const todo = ordered.find((slot) => {
+      const done = sets.filter((s) => s.workoutExerciseId === slot.id).length;
+      return done === 0 || done < (previous.get(slot.exerciseId)?.sets.length ?? 0);
+    });
+    setExpandedId((todo ?? ordered[0])?.id ?? null);
+  }, [workout, previous, sets]);
 
   /** Run a change, then reload; show validation problems instead of throwing. */
   async function act(fn: () => Promise<unknown>): Promise<boolean> {
@@ -129,7 +145,11 @@ export function WorkoutScreen({ id }: { id: string }) {
     const p = picker;
     setPicker(p?.mode === 'add' ? p : null);
     if (p?.mode === 'swap') await act(() => swapSlot(w.id, p.slot.id, exerciseId));
-    else await act(() => addSlot(w.id, exerciseId));
+    else
+      await act(async () => {
+        const u = await addSlot(w.id, exerciseId);
+        setExpandedId(u.exercises.find((s) => s.exerciseId === exerciseId)?.id ?? null);
+      });
   }
 
   async function onCreate(name: string) {
@@ -138,7 +158,10 @@ export function WorkoutScreen({ id }: { id: string }) {
       if (picker?.mode === 'swap') {
         await swapSlot(w.id, picker.slot.id, ex.id);
         setPicker(null);
-      } else await addSlot(w.id, ex.id);
+      } else {
+        const u = await addSlot(w.id, ex.id);
+        setExpandedId(u.exercises.find((s) => s.exerciseId === ex.id)?.id ?? null);
+      }
     });
   }
 
@@ -189,12 +212,17 @@ export function WorkoutScreen({ id }: { id: string }) {
 
       {slots.length === 0 && <p class="muted">No exercises yet. Add the first one below.</p>}
 
-      {slots.map((slot) => (
+      {slots.map((slot, i) => (
         <ExerciseCard
-          key={slot.id}
+          // A swap gives a new key, so the offered rows restart from the new exercise's last time.
+          key={`${slot.id}:${slot.exerciseId}`}
           name={byId.get(slot.exerciseId)?.name ?? 'Unknown exercise'}
           sets={sets.filter((s) => s.workoutExerciseId === slot.id)}
           previous={previous.get(slot.exerciseId)}
+          active={active}
+          expanded={expandedId === slot.id}
+          onToggle={() => setExpandedId((cur) => (cur === slot.id ? null : slot.id))}
+          onComplete={() => active && slots[i + 1] && setExpandedId(slots[i + 1].id)}
           onAddSet={(input) => act(() => addSet(w.id, slot.id, input))}
           onUpdateSet={(setId, input) => act(() => updateSet(setId, input))}
           onDeleteSet={(setId) => act(() => deleteSet(setId))}
@@ -242,6 +270,12 @@ function ExerciseCard(props: {
   name: string;
   sets: WorkoutSet[];
   previous: PreviousPerformance | null | undefined;
+  /** Live workout: rows from last time are offered to record. Past workouts show only what was done. */
+  active: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+  /** Called after the last offered row has been recorded. */
+  onComplete: () => void;
   onAddSet: (input: SetInput) => Promise<boolean>;
   onUpdateSet: (id: string, input: SetInput) => Promise<boolean>;
   onDeleteSet: (id: string) => Promise<boolean>;
@@ -250,34 +284,82 @@ function ExerciseCard(props: {
 }) {
   const { sets, previous } = props;
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Rows not recorded yet. Null until last time's sets have loaded. Kept while collapsed.
+  const [pending, setPending] = useState<PendingRow[] | null>(null);
+  const [busyKey, setBusyKey] = useState<number | null>(null);
 
-  // Prefill: the last set done here, else the first set from last time.
-  const seed = sets[sets.length - 1] ?? previous?.sets[0];
-  const [weight, setWeight] = useState(seed ? formatKg(seed.weightKg) : '');
-  const [reps, setReps] = useState(seed ? String(seed.reps) : '');
-  const seeded = useRef(!!seed);
+  // Last time's sets give this exercise a set count to work through. Without them (first
+  // time), there's always one suggested next row, which doesn't count as "to do".
+  const hadPlan = (previous?.sets.length ?? 0) > 0;
+
   useEffect(() => {
-    // Previous values load after the card mounts; prefill once they arrive.
-    if (!seeded.current && seed) {
-      seeded.current = true;
-      setWeight(formatKg(seed.weightKg));
-      setReps(String(seed.reps));
-    }
-  }, [seed]);
+    if (pending !== null || previous === undefined) return;
+    if (!props.active) return setPending([]);
+    const last = sets[sets.length - 1];
+    setPending(!hadPlan && last ? [extraRow(last)] : initialPendingRows(sets.length, previous?.sets ?? null));
+  }, [previous]);
 
-  const [busy, setBusy] = useState(false);
-  async function onAdd(ev: Event) {
-    ev.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    await props.onAddSet({ reps, weightKg: weight });
-    setBusy(false);
+  const rows = pending ?? [];
+  const toDo = hadPlan ? rows.length : 0;
+  const planned = sets.length + toDo;
+  const done = sets.length > 0 && toDo === 0;
+  const prevAt = (i: number) => {
+    const p = previous?.sets[i];
+    return p ? formatSet(p) : '—';
+  };
+
+  async function record(r: PendingRow) {
+    if (busyKey !== null) return;
+    setBusyKey(r.key);
+    const ok = await props.onAddSet({ reps: r.reps, weightKg: r.weight });
+    setBusyKey(null);
+    if (!ok) return;
+    const left = rows.filter((x) => x.key !== r.key);
+    if (left.length === 0 && !hadPlan) {
+      // First time for this exercise: there's no set count to finish, so offer the next set
+      // (same values) instead of moving on. The user opens the next exercise when ready.
+      setPending((cur) => [...(cur ?? []).filter((x) => x.key !== r.key), extraRow(r)]);
+      return;
+    }
+    setPending((cur) => (cur ?? []).filter((x) => x.key !== r.key));
+    // All of last time's sets are recorded: open the next exercise.
+    if (left.length === 0) props.onComplete();
   }
 
+  const editRow = (key: number, field: 'weight' | 'reps', value: string) =>
+    setPending((cur) => (cur ?? []).map((x) => (x.key === key ? { ...x, [field]: value } : x)));
+
+  function addRow() {
+    const lastPending = rows[rows.length - 1];
+    const lastSaved = sets[sets.length - 1];
+    setPending((cur) => [...(cur ?? []), extraRow(lastPending ?? lastSaved ?? previous?.sets[planned] ?? null)]);
+  }
+
+  if (!props.expanded)
+    return (
+      <article class="card ex-card">
+        <button type="button" class="ex-head" aria-expanded="false" onClick={props.onToggle}>
+          <h3 class="grow">{props.name}</h3>
+          <span class={done ? 'ex-progress done' : 'ex-progress'}>
+            {done && '✓ '}
+            {planned > sets.length ? `${sets.length} / ${planned}` : sets.length} {planned === 1 ? 'set' : 'sets'}
+          </span>
+          <span class="chev" aria-hidden="true">
+            ›
+          </span>
+        </button>
+      </article>
+    );
+
   return (
-    <article class="card">
+    <article class="card ex-card open">
       <header class="row">
-        <h3 class="grow">{props.name}</h3>
+        <button type="button" class="ex-head grow" aria-expanded="true" onClick={props.onToggle}>
+          <h3 class="grow">{props.name}</h3>
+          <span class="chev open" aria-hidden="true">
+            ›
+          </span>
+        </button>
         <button type="button" class="small-btn" onClick={props.onSwap}>
           Swap
         </button>
@@ -287,78 +369,104 @@ function ExerciseCard(props: {
       </header>
 
       <p class="muted small prev">
-        {previous === undefined
-          ? ' '
-          : previous === null
-            ? 'First time'
-            : `Last time · ${formatDay(previous.date)}: ${previous.sets.map(formatSet).join(', ') || 'no sets'}`}
+        {previous === undefined ? ' ' : previous === null ? 'First time' : `Last time · ${formatDay(previous.date)}`}
       </p>
 
-      {sets.length > 0 && (
-        <ol class="sets">
-          {sets.map((s, i) =>
-            s.id === editingId ? (
-              <SetEditRow
-                key={s.id}
-                index={i}
-                set={s}
-                onSave={async (input) => {
-                  if (await props.onUpdateSet(s.id, input)) setEditingId(null);
-                }}
-                onDelete={async () => {
-                  const ok = await confirmDialog({
-                    title: `Delete set ${i + 1}?`,
-                    message: `${props.name}: ${formatSet(s)}`,
-                    confirmLabel: 'Delete',
-                    danger: true,
-                  });
-                  if (ok && (await props.onDeleteSet(s.id))) setEditingId(null);
-                }}
-                onCancel={() => setEditingId(null)}
-              />
-            ) : (
-              <li key={s.id}>
-                <button type="button" class="set-row" onClick={() => setEditingId(s.id)}>
-                  <span class="muted set-no">{i + 1}</span>
-                  <span class="grow">
-                    {s.weightKg === 0 ? 'Bodyweight' : `${formatKg(s.weightKg)} kg`} × {s.reps}
-                  </span>
-                </button>
-              </li>
-            ),
-          )}
-        </ol>
-      )}
+      <div class="set-table">
+        <div class="set-line set-head" aria-hidden="true">
+          <span>Set</span>
+          <span>Previous</span>
+          <span>kg</span>
+          <span>Reps</span>
+          <span />
+        </div>
 
-      <form class="set-form" onSubmit={onAdd}>
-        <label>
-          <span class="muted small">kg</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            enterKeyHint="next"
-            aria-label={`${props.name} weight in kg`}
-            placeholder="0"
-            value={weight}
-            onInput={(e) => setWeight(e.currentTarget.value)}
-          />
-        </label>
-        <label>
-          <span class="muted small">reps</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            enterKeyHint="done"
-            aria-label={`${props.name} reps`}
-            placeholder="0"
-            value={reps}
-            onInput={(e) => setReps(e.currentTarget.value)}
-          />
-        </label>
-        <button type="submit" class="primary" disabled={busy || !reps.trim()}>
-          + Set
-        </button>
-      </form>
+        {sets.map((s, i) =>
+          s.id === editingId ? (
+            <SetEditRow
+              key={s.id}
+              index={i}
+              set={s}
+              onSave={async (input) => {
+                if (await props.onUpdateSet(s.id, input)) setEditingId(null);
+              }}
+              onDelete={async () => {
+                const ok = await confirmDialog({
+                  title: `Delete set ${i + 1}?`,
+                  message: `${props.name}: ${formatSet(s)}`,
+                  confirmLabel: 'Delete',
+                  danger: true,
+                });
+                if (ok && (await props.onDeleteSet(s.id))) setEditingId(null);
+              }}
+              onCancel={() => setEditingId(null)}
+            />
+          ) : (
+            <button
+              key={s.id}
+              type="button"
+              class="set-line done"
+              aria-label={`Set ${i + 1} recorded: ${formatSet(s)}. Tap to edit.`}
+              onClick={() => setEditingId(s.id)}
+            >
+              <span class="set-no">{i + 1}</span>
+              <span class="prev-cell">{prevAt(i)}</span>
+              <span class="val">{s.weightKg === 0 ? 'BW' : formatKg(s.weightKg)}</span>
+              <span class="val">{s.reps}</span>
+              <span class="check on" aria-hidden="true">
+                ✓
+              </span>
+            </button>
+          ),
+        )}
+
+        {rows.map((r, j) => {
+          const n = sets.length + j + 1;
+          return (
+            <form
+              key={r.key}
+              class="set-line"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void record(r);
+              }}
+            >
+              <span class="set-no">{n}</span>
+              <span class="prev-cell">{prevAt(n - 1)}</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                enterKeyHint="next"
+                aria-label={`${props.name} set ${n} weight in kg`}
+                placeholder="kg"
+                value={r.weight}
+                onInput={(e) => editRow(r.key, 'weight', e.currentTarget.value)}
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                enterKeyHint="done"
+                aria-label={`${props.name} set ${n} reps`}
+                placeholder="reps"
+                value={r.reps}
+                onInput={(e) => editRow(r.key, 'reps', e.currentTarget.value)}
+              />
+              <button
+                type="submit"
+                class="check"
+                aria-label={`Record set ${n}`}
+                disabled={busyKey !== null || !r.reps.trim()}
+              >
+                ✓
+              </button>
+            </form>
+          );
+        })}
+      </div>
+
+      <button type="button" class="link add-set" onClick={addRow}>
+        + Add set
+      </button>
     </article>
   );
 }
@@ -373,7 +481,7 @@ function SetEditRow(props: {
   const [weight, setWeight] = useState(formatKg(props.set.weightKg));
   const [reps, setReps] = useState(String(props.set.reps));
   return (
-    <li class="set-edit">
+    <div class="set-edit">
       <form
         class="set-form"
         onSubmit={(e) => {
@@ -402,7 +510,7 @@ function SetEditRow(props: {
           Delete
         </button>
       </div>
-    </li>
+    </div>
   );
 }
 

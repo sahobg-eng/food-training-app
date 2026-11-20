@@ -111,6 +111,11 @@ Pure logic goes in `src/domain/` and gets unit tests.
 - A finished workout's date, start and end can be corrected from History (e.g. Finish tapped
   late); this also moves its sets to the new date. Max 24 h; an end before the start means
   past midnight.
+- Workout screen: one exercise expanded at a time. In a live workout each exercise offers one
+  row per set from last time, prefilled with that set's values (`src/domain/sets.ts`); ✓ records
+  a row (green, filled check). Unrecorded rows are UI state only and are never saved. Recording
+  the last offered row opens the next exercise; a first-time exercise instead offers another
+  row with the same values. Past workouts show recorded sets only.
 - Weights accept a comma or a dot as decimal separator (phone keyboards); 0 kg = bodyweight.
   Reps are whole numbers 1-999.
 
