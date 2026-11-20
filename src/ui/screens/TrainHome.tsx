@@ -5,7 +5,8 @@ import { listRoutines } from '../../db/routines';
 import type { Workout } from '../../db/types';
 import { getActiveWorkout, listFinishedWorkouts } from '../../db/workouts';
 import { getLastExportAt } from '../../db/backup';
-import { CalendarIcon, ChecklistIcon, DumbbellIcon, PlayIcon } from '../components/Icons';
+import { ChecklistIcon, DumbbellIcon, PlayIcon } from '../components/Icons';
+import { WorkoutCalendar } from '../components/WorkoutCalendar';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Timer } from '../components/Timer';
 
@@ -64,15 +65,14 @@ export function TrainHome() {
 
       <nav class="tiles" aria-label="Training">
         <Tile href="#/train/routines" label="Routines" count={routineCount} tone="routines">
-          <ChecklistIcon />
+          <ChecklistIcon size={48} />
         </Tile>
         <Tile href="#/train/exercises" label="Exercises" count={count} tone="exercises">
-          <DumbbellIcon />
-        </Tile>
-        <Tile href="#/train/history" label="History" count={historyCount} tone="history">
-          <CalendarIcon />
+          <DumbbellIcon size={48} />
         </Tile>
       </nav>
+
+      <WorkoutCalendar />
     </section>
   );
 }
@@ -94,7 +94,7 @@ function Tile(props: {
   href: string;
   label: string;
   count: number | null;
-  tone: 'routines' | 'exercises' | 'history';
+  tone: 'routines' | 'exercises';
   children: ComponentChildren;
 }) {
   return (

@@ -43,3 +43,23 @@ export function atLocalTime(date: DateStr, time: string): number {
   d.setHours(Number(m[1]), Number(m[2]), 0, 0);
   return d.getTime();
 }
+
+/** First and last day of a month (`month` is 0-11), as 'YYYY-MM-DD'. */
+export function monthRange(year: number, month: number): { first: DateStr; last: DateStr } {
+  return { first: toDateStr(new Date(year, month, 1)), last: toDateStr(new Date(year, month + 1, 0)) };
+}
+
+/**
+ * Calendar weeks for a month, Monday first. Each week has 7 cells: a date in the month,
+ * or null for padding before the 1st and after the last day.
+ */
+export function monthGrid(year: number, month: number): (DateStr | null)[][] {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const lead = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
+  const cells: (DateStr | null)[] = Array(lead).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(toDateStr(new Date(year, month, d)));
+  while (cells.length % 7) cells.push(null);
+  const weeks: (DateStr | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}

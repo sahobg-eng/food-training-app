@@ -7,6 +7,7 @@ import {
   finishWorkout,
   getWorkout,
   getWorkoutSets,
+  finishedWorkoutsByDate,
   listFinishedWorkouts,
   startWorkout,
   updateWorkoutTimes,
@@ -50,5 +51,20 @@ describe('history', () => {
     await expect(updateWorkoutTimes(w.id, t, t + 25 * H)).rejects.toThrow('24 hours');
     const active = await startWorkout(null);
     await expect(updateWorkoutTimes(active.id, t, t + H)).rejects.toThrow('Finish the workout');
+  });
+});
+
+describe('workouts by date', () => {
+  it('groups finished workouts in a range by day, oldest first, skipping the active one', async () => {
+    const a = await done(atLocalTime('2026-11-03', '18:00'));
+    const b = await done(atLocalTime('2026-11-17', '07:00'));
+    const c = await done(atLocalTime('2026-11-17', '19:00'));
+    await done(atLocalTime('2026-10-31', '10:00'));
+    await done(atLocalTime('2026-12-01', '10:00'));
+    await startWorkout(null, atLocalTime('2026-11-20', '09:00'));
+    const byDate = await finishedWorkoutsByDate('2026-11-01', '2026-11-30');
+    expect([...byDate.keys()].sort()).toEqual(['2026-11-03', '2026-11-17']);
+    expect(byDate.get('2026-11-17')!.map((w) => w.id)).toEqual([b.id, c.id]);
+    expect(byDate.get('2026-11-03')!.map((w) => w.id)).toEqual([a.id]);
   });
 });

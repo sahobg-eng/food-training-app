@@ -18,7 +18,7 @@ import {
 } from '../../db/workouts';
 import { addDays, atLocalTime, toDateStr, toTimeStr } from '../../domain/dates';
 import { formatDay, formatDuration, formatKg, formatSet } from '../../domain/format';
-import { navigate } from '../../router';
+import { navigate, previousPath } from '../../router';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { confirmDialog } from '../components/ConfirmDialog';
@@ -144,7 +144,11 @@ export function WorkoutScreen({ id }: { id: string }) {
 
   return (
     <section>
-      <ScreenHeader title={w.routineName ?? 'Workout'} back={active ? '/train' : '/train/history'} />
+      {/* A past workout opened from the Train calendar goes back there; otherwise to History. */}
+      <ScreenHeader
+        title={w.routineName ?? 'Workout'}
+        back={active || previousPath() === '/train' ? '/train' : '/train/history'}
+      />
       <div class="workout-bar">
         <div class="row">
           {active ? (

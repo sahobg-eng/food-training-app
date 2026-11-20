@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, atLocalTime, parseDateStr, toDateStr, toTimeStr, weekday } from './dates';
+import { addDays, atLocalTime, monthGrid, monthRange, parseDateStr, toDateStr, toTimeStr, weekday } from './dates';
 
 // Tests run with TZ=Europe/Berlin (see package.json) so DST is exercised.
 describe('dates', () => {
@@ -35,5 +35,25 @@ describe('times', () => {
     expect(new Date(t).getDate()).toBe(25);
     expect(() => atLocalTime('2026-10-25', '24:00')).toThrow();
     expect(() => atLocalTime('2026-10-25', '9.05')).toThrow();
+  });
+});
+
+describe('month grid', () => {
+  it('lays out November 2026 Monday-first (1st is a Sunday)', () => {
+    const g = monthGrid(2026, 10);
+    expect(g[0]).toEqual([null, null, null, null, null, null, '2026-11-01']);
+    expect(g[1][0]).toBe('2026-11-02');
+    expect(g.at(-1)).toEqual(['2026-11-30', null, null, null, null, null, null]);
+    expect(g.flat().filter(Boolean)).toHaveLength(30);
+    expect(g.every((w) => w.length === 7)).toBe(true);
+  });
+  it('handles February, leap years and months starting on Monday', () => {
+    expect(monthGrid(2028, 1).flat().filter(Boolean)).toHaveLength(29);
+    expect(monthGrid(2027, 1)[0][0]).toBe('2027-02-01'); // Monday
+    expect(monthGrid(2027, 1)).toHaveLength(4); // exactly 4 weeks
+  });
+  it('gives the first and last day of a month', () => {
+    expect(monthRange(2026, 1)).toEqual({ first: '2026-02-01', last: '2026-02-28' });
+    expect(monthRange(2026, 11)).toEqual({ first: '2026-12-01', last: '2026-12-31' });
   });
 });

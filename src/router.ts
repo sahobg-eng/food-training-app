@@ -6,6 +6,19 @@ function readPath(): string {
   return raw.startsWith('/') ? raw : '/';
 }
 
+let current = readPath();
+let previous: string | null = null;
+if (typeof window !== 'undefined')
+  window.addEventListener('hashchange', () => {
+    previous = current;
+    current = readPath();
+  });
+
+/** The route shown before the current one (null right after the app opened). */
+export function previousPath(): string | null {
+  return previous;
+}
+
 export function navigate(path: string): void {
   window.location.hash = path;
 }

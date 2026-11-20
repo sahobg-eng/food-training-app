@@ -299,3 +299,15 @@ export async function updateWorkoutTimes(id: string, startedAt: number, endedAt:
   await tx.done;
   return updated;
 }
+
+/** Finished workouts with a date in [from, to] (inclusive), grouped by date, each day oldest first. */
+export async function finishedWorkoutsByDate(from: DateStr, to: DateStr): Promise<Map<DateStr, Workout[]>> {
+  const rows = await (await getDB()).getAllFromIndex('workouts', 'date', IDBKeyRange.bound(from, to));
+  const out = new Map<DateStr, Workout[]>();
+  for (const w of rows.filter((w) => w.endedAt !== null).sort((a, b) => a.startedAt - b.startedAt)) {
+    const day = out.get(w.date) ?? [];
+    day.push(w);
+    out.set(w.date, day);
+  }
+  return out;
+}
